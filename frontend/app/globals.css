@@ -1,14 +1,25 @@
-﻿:root {
-  --bg: #f4efe6;
-  --surface: rgba(255, 252, 245, 0.88);
-  --surface-strong: #fffaf2;
-  --line: #d8cdbd;
-  --text: #1f1a17;
-  --muted: #695f56;
-  --brand: #b84f2a;
-  --brand-deep: #7d2f14;
-  --success: #166534;
-  --error: #b91c1c;
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --accent: #7c3aed;
+  --accent-light: #ede9fe;
+  --bg: #f9fafb;
+  --surface: #ffffff;
+  --border: #e5e7eb;
+  --text: #111827;
+  --muted: #6b7280;
+  --success-bg: #ecfdf5;
+  --success-text: #065f46;
+  --warning-bg: #fffbeb;
+  --warning-text: #92400e;
+  --error: #dc2626;
+  --surface-strong: #ffffff;
+  --line: var(--border);
+  --brand: var(--accent);
+  --brand-deep: #5b21b6;
+  --success: var(--success-text);
   --shadow: 0 20px 60px rgba(75, 51, 22, 0.12);
 }
 
@@ -20,12 +31,12 @@ html, body {
   margin: 0;
   padding: 0;
   min-height: 100%;
-  background:
-    radial-gradient(circle at top left, rgba(242, 194, 118, 0.35), transparent 30%),
-    radial-gradient(circle at top right, rgba(184, 79, 42, 0.14), transparent 28%),
-    linear-gradient(180deg, #f8f3eb 0%, #f1e8da 100%);
-  color: var(--text);
-  font-family: Georgia, "Times New Roman", serif;
+  background: #f9fafb;
+  color: #111827;
+}
+
+body {
+  font-family: inherit;
 }
 
 a {
@@ -645,7 +656,7 @@ pre.console {
   border-radius: 0 0 20px 20px;
   background: #13151b;
   color: #d9f4d8;
- }
+}
 
 .modal-backdrop {
   position: fixed;

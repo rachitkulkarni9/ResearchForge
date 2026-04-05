@@ -1,10 +1,16 @@
 import json
+import logging
+import os
 from pathlib import Path
+import time
 from typing import Any
+from uuid import uuid4
 
 from google.cloud import firestore
 
 from app.core.config import Settings
+
+logger = logging.getLogger(__name__)
 
 
 class DocumentStore:
@@ -29,8 +35,22 @@ class DocumentStore:
         if self._client:
             self._client.collection(collection).document(doc_id).set(payload)
             return
-        with (self._collection_dir(collection) / f"{doc_id}.json").open("w", encoding="utf-8") as handle:
+        path = self._collection_dir(collection) / f"{doc_id}.json"
+        temp_path = path.with_name(f"{path.name}.{os.getpid()}.{uuid4().hex}.tmp")
+        with temp_path.open("w", encoding="utf-8") as handle:
             json.dump(payload, handle, default=str, indent=2)
+            handle.flush()
+            os.fsync(handle.fileno())
+
+        for attempt in range(5):
+            try:
+                temp_path.replace(path)
+                return
+            except PermissionError:
+                if attempt == 4:
+                    temp_path.unlink(missing_ok=True)
+                    raise
+                time.sleep(0.05 * (attempt + 1))
 
     def get(self, collection: str, doc_id: str) -> dict[str, Any] | None:
         if self._client:
@@ -39,7 +59,11 @@ class DocumentStore:
         path = self._collection_dir(collection) / f"{doc_id}.json"
         if not path.exists():
             return None
-        return json.loads(path.read_text(encoding="utf-8"))
+        try:
+            return json.loads(path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            logger.warning("Skipping malformed local document: %s", path)
+            return None
 
     def list(self, collection: str, filters: dict[str, Any] | None = None) -> list[dict[str, Any]]:
         filters = filters or {}
@@ -51,7 +75,11 @@ class DocumentStore:
 
         items: list[dict[str, Any]] = []
         for path in self._collection_dir(collection).glob("*.json"):
-            item = json.loads(path.read_text(encoding="utf-8"))
+            try:
+                item = json.loads(path.read_text(encoding="utf-8"))
+            except json.JSONDecodeError:
+                logger.warning("Skipping malformed local document during list(): %s", path)
+                continue
             if all(item.get(key) == value for key, value in filters.items()):
                 items.append(item)
         items.sort(key=lambda item: item.get("created_at", ""), reverse=True)
