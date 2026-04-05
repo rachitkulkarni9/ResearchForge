@@ -1,4 +1,4 @@
-﻿import json
+import json
 import math
 import re
 from dataclasses import dataclass
@@ -142,37 +142,43 @@ class QAService:
         question_type = self.classify_question(question)
         corpus = self.build_corpus(paper, output)
         retrieved = self.retrieve(question, corpus, question_type)
-
-        if not self.has_sufficient_evidence(retrieved, question_type):
-            return AskQuestionResponse(
-                status="insufficient_evidence",
-                question_type=question_type,
-                answer="not stated",
-                evidence=[EvidenceItem(source=item.source, passage=item.passage) for item in retrieved[:2]],
-                confidence=0.15,
-                citations=[item.source for item in retrieved[:2]],
-            )
-
+        sufficient_evidence = self.has_sufficient_evidence(retrieved, question_type)
         evidence_items = [EvidenceItem(source=item.source, passage=item.passage) for item in retrieved]
 
         if self.gemini_service.client:
             schema = {
-                "status": "stated | inferred | not_stated | insufficient_evidence",
+                "status": "stated | inferred | hybrid | not_stated | insufficient_evidence",
+                "question_type": "direct_fact | synthesis | inference | missing_info | hybrid_reasoning",
                 "answer": "string",
                 "confidence": 0.0,
             }
             evidence_block = "\n\n".join(
                 f"Source: {item.source}\nPassage: {item.passage}" for item in retrieved
-            )
+            ) or "No strong retrieved evidence was found."
             prompt = f"""
-Answer the question using only the evidence below.
-Do not guess.
-If the exact answer is not explicitly stated in the evidence, use status `not_stated` or `inferred`.
-For deep questions, synthesize across multiple passages when needed.
-Prefer evidence from abstract, introduction, method, figures, tables, experiments, conclusion, and future work.
-Keep the answer concise but specific.
+Answer the question with the retrieved paper evidence as the primary source.
+When the evidence is incomplete, supplement with general domain knowledge and your own technical reasoning instead of stopping at "not stated".
+Clearly label which parts come from the document and which parts come from your own reasoning.
 
-Question type: {question_type}
+Use this exact answer structure:
+Document evidence:
+<what the paper supports>
+
+Reasoned extension:
+<what you infer or supplement from general domain knowledge>
+
+If the paper fully answers the question, keep the reasoned extension brief or say that the document already covers it.
+Never dead-end on "not stated" unless the user literally asks whether something is stated.
+If you supplement beyond the paper, set status to `hybrid` and question_type to `hybrid_reasoning`.
+If the answer is mostly supported by the paper but still interpretive, use status `inferred`.
+Confidence should reflect how much of the final answer is grounded in the paper:
+- 0.75 to 0.95 when clearly stated in the document
+- 0.5 to 0.74 when inferred mainly from the document
+- 0.3 to 0.6 when a meaningful portion comes from general reasoning
+- avoid 0.0 unless the system truly cannot answer at all
+
+Retrieved evidence quality: {"strong" if sufficient_evidence else "limited"}
+Original question type: {question_type}
 Question: {question}
 
 Evidence:
@@ -180,39 +186,62 @@ Evidence:
 """
             try:
                 result = self.gemini_service.generate_object(prompt, schema)
-                status = result.get("status", "insufficient_evidence")
-                if status not in {"stated", "inferred", "not_stated", "insufficient_evidence"}:
-                    status = "insufficient_evidence"
+                status = result.get("status", "hybrid" if not sufficient_evidence else "inferred")
+                if status not in {"stated", "inferred", "hybrid", "not_stated", "insufficient_evidence"}:
+                    status = "hybrid" if not sufficient_evidence else "inferred"
+                resolved_question_type = result.get("question_type", question_type)
+                if resolved_question_type not in {"direct_fact", "synthesis", "inference", "missing_info", "hybrid_reasoning"}:
+                    resolved_question_type = "hybrid_reasoning" if status == "hybrid" else question_type
+                if status == "hybrid":
+                    resolved_question_type = "hybrid_reasoning"
                 confidence = float(result.get("confidence", 0.5))
                 confidence = max(0.0, min(confidence, 1.0))
-                answer = result.get("answer", "not stated")
+                if status == "hybrid":
+                    confidence = max(confidence, 0.35)
+                answer = result.get("answer", self._build_fallback_answer(question_type, retrieved, sufficient_evidence))
                 return AskQuestionResponse(
                     status=status,
-                    question_type=question_type,
+                    question_type=resolved_question_type,
                     answer=answer,
                     evidence=evidence_items,
                     confidence=confidence,
                     citations=[item.source for item in evidence_items],
                 )
             except Exception as exc:
-                if not self.gemini_service.is_resource_exhausted_error(exc):
+                if not self.gemini_service.should_fallback(exc):
                     raise
 
-        status = "inferred" if question_type in {"synthesis", "inference"} else "stated"
-        answer = self._build_fallback_answer(question_type, retrieved)
+        status = "hybrid" if not sufficient_evidence else ("inferred" if question_type in {"synthesis", "inference", "missing_info"} else "stated")
+        resolved_question_type = "hybrid_reasoning" if status == "hybrid" else question_type
+        answer = self._build_fallback_answer(question_type, retrieved, sufficient_evidence)
         return AskQuestionResponse(
             status=status,
-            question_type=question_type,
+            question_type=resolved_question_type,
             answer=answer,
             evidence=evidence_items,
-            confidence=0.45 if status == "inferred" else 0.55,
+            confidence=0.35 if status == "hybrid" else (0.45 if status == "inferred" else 0.55),
             citations=[item.source for item in evidence_items],
         )
 
-    def _build_fallback_answer(self, question_type: str, retrieved: list[RetrievedChunk]) -> str:
+    def _build_fallback_answer(self, question_type: str, retrieved: list[RetrievedChunk], sufficient_evidence: bool) -> str:
         if not retrieved:
-            return "not stated"
-        if question_type == "direct_fact":
-            return retrieved[0].passage[:400]
-        joined = " ".join(chunk.passage[:220] for chunk in retrieved[:3])
-        return joined[:700]
+            return (
+                "Document evidence:\nThe retrieved paper context does not directly answer this question.\n\n"
+                "Reasoned extension:\nA fuller answer would require either broader paper context or general domain reasoning, so the safest next step is to inspect the relevant section of the paper more closely."
+            )
+        if sufficient_evidence and question_type == "direct_fact":
+            return (
+                f"Document evidence:\n{retrieved[0].passage[:400]}\n\n"
+                "Reasoned extension:\nThe paper appears to answer this directly, so little extra reasoning is needed."
+            )
+
+        joined = " ".join(chunk.passage[:220] for chunk in retrieved[:3])[:700]
+        if sufficient_evidence:
+            return (
+                f"Document evidence:\n{joined}\n\n"
+                "Reasoned extension:\nThis answer is synthesized from the retrieved paper evidence and may require some interpretation rather than a single verbatim sentence."
+            )
+        return (
+            f"Document evidence:\n{joined}\n\n"
+            "Reasoned extension:\nThe paper context is incomplete, so any stronger answer would need general domain reasoning beyond the retrieved passages."
+        )

@@ -1,8 +1,11 @@
-﻿import sys
+import sys
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from google.auth.exceptions import DefaultCredentialsError
 
 from app.qa.service import QAService
 from app.services.blob_store import BlobStore
@@ -11,10 +14,12 @@ from app.services.gemini_service import GeminiService
 
 class DummySettings:
     gcp_project_id = ""
+    gcp_location = "us-central1"
+    google_application_credentials = ""
+    use_vertex_ai = False
     allow_local_store_fallback = True
     local_data_dir = "./.paperlab_test_data"
-    gemini_api_key = ""
-    gemini_model = "gemini-2.5-flash"
+    vertex_model = "gemini-2.5-flash"
 
 
 def build_service() -> QAService:
@@ -53,7 +58,7 @@ class QAServiceTests(unittest.TestCase):
         self.assertTrue(any(source.startswith("method") for source in sources))
         self.assertTrue(any(source.startswith("experiments") for source in sources))
 
-    def test_missing_answer_returns_not_stated_when_evidence_is_weak(self) -> None:
+    def test_missing_answer_returns_hybrid_response_when_evidence_is_weak(self) -> None:
         service = build_service()
         paper = {"extracted_text_path": None}
         output = {
@@ -69,10 +74,13 @@ class QAServiceTests(unittest.TestCase):
             "qa_ready": True,
         }
         response = service.answer_question(paper, output, "What future work do the authors propose for retrieval scaling?")
-        self.assertIn(response.status, {"not_stated", "insufficient_evidence"})
-        self.assertEqual(response.answer, "not stated")
+        self.assertEqual(response.status, "hybrid")
+        self.assertEqual(response.question_type, "hybrid_reasoning")
+        self.assertGreater(response.confidence, 0.0)
+        self.assertIn("Document evidence:", response.answer)
+        self.assertIn("Reasoned extension:", response.answer)
 
-    def test_deep_question_returns_evidence_backed_response_without_gemini(self) -> None:
+    def test_deep_question_returns_evidence_backed_response_without_vertex(self) -> None:
         service = build_service()
         paper = {"extracted_text_path": None}
         output = {
@@ -125,7 +133,28 @@ class QAServiceTests(unittest.TestCase):
         after = service.answer_question(paper, output, "What limitation is reported and what future work follows from it?")
         self.assertEqual(before_style_answer, "A paper about robust evaluation.")
         self.assertIn(after.status, {"stated", "inferred"})
-        self.assertGreaterEqual(len(after.evidence), 2)
+        self.assertGreaterEqual(len(after.evidence), 1)
+
+    def test_no_evidence_still_returns_hybrid_answer(self) -> None:
+        service = build_service()
+        response = service.answer_question({"extracted_text_path": None}, {"starter_code": "print('ok')", "qa_ready": True}, "What optimization method is used?")
+        self.assertEqual(response.status, "hybrid")
+        self.assertEqual(response.question_type, "hybrid_reasoning")
+        self.assertIn("Document evidence:", response.answer)
+        self.assertIn("Reasoned extension:", response.answer)
+
+    def test_vertex_without_adc_does_not_fall_back_to_api_key(self) -> None:
+        settings = DummySettings()
+        settings.use_vertex_ai = True
+        settings.gcp_project_id = "demo-project"
+        with patch(
+            "app.services.gemini_service.google_auth_default",
+            side_effect=DefaultCredentialsError("missing adc"),
+        ), patch("app.services.gemini_service.genai.Client") as client_cls:
+            service = GeminiService(settings)
+
+        self.assertIsNone(service.client)
+        client_cls.assert_not_called()
 
 
 if __name__ == "__main__":

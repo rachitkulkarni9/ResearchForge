@@ -161,3 +161,41 @@ def get_status(
     if not job or job["workspace_id"] != current_user["workspace_id"]:
         raise HTTPException(status_code=404, detail="Job not found")
     return JobStatusResponse(**job)
+
+
+@router.delete("/paper/{paper_id}")
+def delete_paper(
+    paper_id: str,
+    current_user: dict = Depends(get_current_user),
+    document_store: DocumentStore = Depends(get_document_store),
+    blob_store: BlobStore = Depends(get_blob_store),
+    workspace_service: WorkspaceService = Depends(get_workspace_service),
+    usage_service: UsageService = Depends(get_usage_service),
+) -> dict[str, str]:
+    workspace_id = current_user["workspace_id"]
+    ensure_workspace_access(workspace_service, workspace_id, current_user["sub"])
+
+    paper = document_store.get("papers", paper_id)
+    if not paper or paper["workspace_id"] != workspace_id:
+        raise HTTPException(status_code=404, detail="Paper not found")
+
+    blob_store.delete_path(paper.get("pdf_gcs_path", ""))
+    blob_store.delete_path(paper.get("extracted_text_path", ""))
+
+    output = document_store.get("paper_outputs", paper_id)
+    if output:
+        for key in ("source_text_path", "supporting_notes_path"):
+            blob_store.delete_path(output.get(key, ""))
+        document_store.delete("paper_outputs", paper_id)
+
+    sandbox = document_store.get("sandbox_sessions", paper_id)
+    if sandbox:
+        document_store.delete("sandbox_sessions", paper_id)
+
+    jobs = document_store.list("jobs", {"workspace_id": workspace_id, "paper_id": paper_id})
+    for job in jobs:
+        document_store.delete("jobs", job["id"])
+
+    document_store.delete("papers", paper_id)
+    usage_service.track(workspace_id, current_user["sub"], "paper.deleted", {"paper_id": paper_id})
+    return {"message": "Paper deleted successfully."}

@@ -13,6 +13,9 @@ class UserRecord(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid4()))
     email: str
     name: str
+    password_hash: str = ""
+    auth_provider: str = "local"
+    auth_subject: str = ""
     default_workspace_id: str
     created_at: datetime = Field(default_factory=utc_now)
 

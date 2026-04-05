@@ -56,3 +56,11 @@ class DocumentStore:
                 items.append(item)
         items.sort(key=lambda item: item.get("created_at", ""), reverse=True)
         return items
+
+    def delete(self, collection: str, doc_id: str) -> None:
+        if self._client:
+            self._client.collection(collection).document(doc_id).delete()
+            return
+        path = self._collection_dir(collection) / f"{doc_id}.json"
+        if path.exists():
+            path.unlink()

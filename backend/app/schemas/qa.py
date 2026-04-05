@@ -14,8 +14,8 @@ class EvidenceItem(BaseModel):
 
 
 class AskQuestionResponse(BaseModel):
-    status: Literal["stated", "inferred", "not_stated", "insufficient_evidence"]
-    question_type: Literal["direct_fact", "synthesis", "inference", "missing_info"]
+    status: Literal["stated", "inferred", "hybrid", "not_stated", "insufficient_evidence"]
+    question_type: Literal["direct_fact", "synthesis", "inference", "missing_info", "hybrid_reasoning"]
     answer: str
     evidence: list[EvidenceItem] = Field(default_factory=list)
     confidence: float = 0.0

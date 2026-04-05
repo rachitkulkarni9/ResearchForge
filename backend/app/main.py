@@ -10,6 +10,9 @@ from app.routes.sandbox import router as sandbox_router
 
 configure_logging()
 settings = get_settings()
+production_errors = settings.validate_production_settings()
+if production_errors:
+    raise RuntimeError("Invalid production configuration:\n- " + "\n- ".join(production_errors))
 app = FastAPI(title=settings.app_name)
 
 app.add_middleware(

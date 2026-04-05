@@ -17,7 +17,7 @@ class OrchestratorAgent(BaseAgent):
             math_explanations=insights.get("math_explanations", []),
             implementation_steps=implementation.get("implementation_steps", []),
             sandbox_tasks=implementation.get("sandbox_tasks", []),
-            starter_code=implementation.get("starter_code") or 'print("PaperLab sandbox ready")\n',
+            starter_code=implementation.get("starter_code") or 'print("ResearchForge sandbox ready")\n',
             qa_ready=True,
         )
         return merged.model_dump(mode="json")

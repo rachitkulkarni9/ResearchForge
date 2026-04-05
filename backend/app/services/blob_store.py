@@ -39,3 +39,16 @@ class BlobStore:
 
     def read_text(self, path: str) -> str:
         return self.read_bytes(path).decode("utf-8", errors="ignore")
+
+    def delete_path(self, path: str) -> None:
+        if not path:
+            return
+        if path.startswith("gs://") and self._client:
+            _, remainder = path.split("gs://", 1)
+            bucket_name, blob_name = remainder.split("/", 1)
+            bucket = self._client.bucket(bucket_name)
+            bucket.blob(blob_name).delete()
+            return
+        local_path = Path(path)
+        if local_path.exists():
+            local_path.unlink()

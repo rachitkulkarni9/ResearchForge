@@ -47,6 +47,8 @@ class MathExplanationModel(BaseModel):
     variable_notes: list[str] = Field(default_factory=list)
     explanation: str
     importance: str = ""
+    source_type: str = "text"
+    source_context: str = ""
 
 
 class ImplementationStepModel(BaseModel):

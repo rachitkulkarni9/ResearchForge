@@ -6,6 +6,7 @@ from app.qa.service import QAService
 from app.sandbox.executor import SandboxExecutor
 from app.services.blob_store import BlobStore
 from app.services.document_store import DocumentStore
+from app.services.firebase_auth_service import FirebaseAuthService
 from app.services.gemini_service import GeminiService
 from app.services.pdf_service import PdfExtractionService
 from app.services.usage_service import UsageService
@@ -30,6 +31,11 @@ def get_pdf_service() -> PdfExtractionService:
 @lru_cache
 def get_gemini_service() -> GeminiService:
     return GeminiService(get_settings())
+
+
+@lru_cache
+def get_firebase_auth_service() -> FirebaseAuthService:
+    return FirebaseAuthService(get_settings())
 
 
 @lru_cache
