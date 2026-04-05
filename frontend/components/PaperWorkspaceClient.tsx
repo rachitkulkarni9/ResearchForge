@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -8,8 +8,6 @@ import { apiFetch } from '@/lib/api';
 import type { PaperDetail, QAResponse } from '@/types/paper';
 
 const PAPER_VIEWS = [
-  { key: 'overview', label: 'Overview', href: '' },
-  { key: 'summary', label: 'Summary', href: 'summary' },
   { key: 'insights', label: 'Insights', href: 'insights' },
   { key: 'math', label: 'Math', href: 'math' },
   { key: 'implementation', label: 'Implementation', href: 'implementation' },
@@ -17,11 +15,19 @@ const PAPER_VIEWS = [
   { key: 'qa', label: 'Q&A', href: 'qa' },
 ] as const;
 
-type PaperView = (typeof PAPER_VIEWS)[number]['key'];
+type PaperView = 'summary' | (typeof PAPER_VIEWS)[number]['key'];
 
 interface PaperWorkspaceClientProps {
   paperId: string;
   view: PaperView;
+}
+
+function humanizePaperLabel(value: string) {
+  return value
+    .replace(/\.pdf$/i, '')
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 type AnswerBlock =
@@ -84,17 +90,6 @@ function parseAnswerBlocks(answer: string): AnswerBlock[] {
       continue;
     }
 
-    if (trimmed.toUpperCase() === trimmed && trimmed.length > 4 && trimmed.length < 50 && !trimmed.includes(' ')) {
-      flushSection();
-      currentTitle = trimmed.replace(/_/g, ' ');
-      continue;
-    }
-
-    if (/implementation|snippet|code/i.test(trimmed) && !trimmed.startsWith('-') && !trimmed.includes(':') && currentBody.length === 0) {
-      pendingCodeTitle = trimmed;
-      continue;
-    }
-
     currentBody.push(line);
   }
 
@@ -122,20 +117,18 @@ function buildSandboxAssets(detail: PaperDetail) {
   const implementationAssets = (detail.output?.implementation_steps || []).slice(0, 4).map((item, index) => ({
     label: item.step || `Implementation ${index + 1}`,
     detail: item.detail,
-    kind: 'step',
   }));
 
-  const mathAssets = (detail.output?.math_explanations || []).slice(0, 4).map((item, index) => ({
+  const mathAssets = (detail.output?.math_explanations || []).slice(0, 3).map((item, index) => ({
     label: item.concept || `Equation ${index + 1}`,
     detail: item.formula || item.explanation,
-    kind: 'formula',
   }));
 
   return [
-    { label: 'main_model.py', detail: 'Current editable sandbox file', kind: 'file' },
+    { label: 'main_model.py', detail: 'Current editable sandbox file' },
     ...implementationAssets,
     ...mathAssets,
-  ].slice(0, 7);
+  ].slice(0, 6);
 }
 
 export function PaperWorkspaceClient({ paperId, view }: PaperWorkspaceClientProps) {
@@ -178,7 +171,7 @@ export function PaperWorkspaceClient({ paperId, view }: PaperWorkspaceClientProp
     setReprocessing(true);
     setNotice('');
     try {
-      const result = await apiFetch<{ message: string }>('/paper/' + paperId + '/reprocess', {
+      const result = await apiFetch<{ message: string }>(`/paper/${paperId}/reprocess`, {
         method: 'POST',
       });
       setNotice(result.message);
@@ -270,304 +263,256 @@ export function PaperWorkspaceClient({ paperId, view }: PaperWorkspaceClientProp
   const sandboxAssets = buildSandboxAssets(detail);
   const codeLines = code.split('\n');
   const consoleLines = (runOutput || 'Run the sandbox to see stdout and stderr here.').split('\n');
+  const displayTitle = humanizePaperLabel(detail.paper.title || detail.paper.filename);
+  const displayFilename = humanizePaperLabel(detail.paper.filename);
 
   return (
-    <div className="stack" style={{ marginTop: 24 }}>
-      <div className="card stack">
-        <div className="button-row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <div>
-            <div className="eyebrow">Paper Workspace</div>
-            <h2>{detail.paper.title}</h2>
-            <p className="muted">{detail.paper.filename}</p>
-          </div>
-          <div className="stack" style={{ alignItems: 'flex-end', gap: 10 }}>
-            <span className="badge">{detail.paper.status}</span>
-            <div className="button-row" style={{ justifyContent: 'flex-end' }}>
-              <button className="button secondary" onClick={() => void loadDetail()} type="button">Refresh</button>
-              <button className="button ghost" disabled={reprocessing} onClick={reprocessPaper} type="button">{reprocessing ? 'Reprocessing...' : 'Reprocess'}</button>
-            </div>
-          </div>
+    <section className="app-dashboard-shell paper-workspace-shell">
+      <aside className="app-sidebar paper-sidebar">
+        <div>
+          <div className="app-sidebar-brand">ResearchForge</div>
+          <nav className="app-sidebar-nav" aria-label="Paper navigation">
+            <Link className={`app-sidebar-link${view === 'summary' ? ' active' : ''}`} href={`/papers/${paperId}`}>
+              <span className="app-sidebar-dot" />
+              <span>Summary</span>
+            </Link>
+            {PAPER_VIEWS.map((item) => {
+              const href = `/papers/${paperId}/${item.href}`;
+              const active = activeHref === item.href;
+              return (
+                <Link className={`app-sidebar-link${active ? ' active' : ''}`} href={href} key={item.key}>
+                  <span className="app-sidebar-dot" />
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
+          </nav>
         </div>
-        {notice ? <p className="banner">{notice}</p> : null}
-        {output?.fallback_mode ? <p className="banner">This paper completed in fallback mode because Gemini was unavailable. The sandbox and saved outputs still work.</p> : null}
-        <div className="paper-nav">
-          {PAPER_VIEWS.map((item) => {
-            const href = item.href ? `/papers/${paperId}/${item.href}` : `/papers/${paperId}`;
-            const active = activeHref === item.href;
-            return (
-              <Link className={`paper-nav-link${active ? ' active' : ''}`} href={href} key={item.key}>
-                {item.label}
-              </Link>
-            );
-          })}
+        <div className="app-sidebar-footer">
+          <div className="app-sidebar-plan">Current paper</div>
+          <strong>{displayTitle}</strong>
         </div>
-      </div>
+      </aside>
 
-      {view === 'overview' ? (
-        <div className="grid two">
-          <div className="card stack">
-            <h3>Summary snapshot</h3>
-            <p>{output?.summary || 'Analysis is still processing. Refresh in a few seconds.'}</p>
-          </div>
-          <div className="card stack">
-            <h3>Workspace map</h3>
-            <div className="quick-links">
-              {PAPER_VIEWS.filter((item) => item.key !== 'overview').map((item) => {
-                const href = `/papers/${paperId}/${item.href}`;
-                return <Link className="quick-link" href={href} key={item.key}>{item.label}</Link>;
-              })}
-            </div>
-          </div>
-          <div className="card stack">
-            <h3>Top insights</h3>
-            {(output?.key_insights || []).slice(0, 4).map((item, index) => <div key={index}>- {item}</div>)}
-          </div>
-          <div className="card stack">
-            <h3>Sandbox starter</h3>
-            <pre className="console">{detail.sandbox?.current_code || output?.starter_code || 'Starter code will appear here.'}</pre>
-          </div>
-        </div>
-      ) : null}
-
-      {view === 'summary' ? (
-        <div className="stack">
-          <div className="card stack">
-            <h3>Paper summary</h3>
-            <p>{output?.summary || 'Summary not available yet.'}</p>
-          </div>
-          <div className="card stack">
-            <h3>Sections</h3>
-            {(output?.sections || []).map((section, index) => (
-              <div key={index} className="section-block">
-                <strong>{section.title}</strong>
-                <p className="muted">{section.summary}</p>
+      <div className="app-dashboard-main paper-main-shell">
+        <section className="app-dashboard-panel paper-summary-panel">
+          <div className="paper-hero-card">
+            <div className="button-row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div>
+                <div className="eyebrow paper-meta-eyebrow">{detail.paper.status}</div>
+                <h1 className="paper-title">{displayTitle}</h1>
+                <p className="paper-filename">{displayFilename}</p>
               </div>
-            ))}
-          </div>
-        </div>
-      ) : null}
-
-      {view === 'insights' ? (
-        <div className="grid two">
-          <div className="card stack">
-            <h3>Key insights</h3>
-            {(output?.key_insights || []).map((item, index) => <div key={index}>- {item}</div>)}
-          </div>
-          <div className="card stack">
-            <h3>Novel contributions</h3>
-            {(output?.novel_contributions || []).map((item, index) => <div key={index}>- {item}</div>)}
-          </div>
-          <div className="card stack" style={{ gridColumn: '1 / -1' }}>
-            <h3>Limitations</h3>
-            {(output?.limitations || []).map((item, index) => <div key={index}>- {item}</div>)}
-          </div>
-        </div>
-      ) : null}
-
-      {view === 'math' ? (
-        <div className="card stack">
-          <h3>Math explanations</h3>
-          {(output?.math_explanations || []).length === 0 ? <p className="muted">No math explanations were extracted yet.</p> : null}
-          {(output?.math_explanations || []).map((item, index) => (
-            <div key={index} className="section-block stack" style={{ gap: 10 }}>
-              <div className="button-row" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
-                <strong>{item.concept}</strong>
-                {item.source_type ? <span className="badge">{item.source_type}</span> : null}
+              <div className="button-row" style={{ justifyContent: 'flex-end' }}>
+                <Link className="button ghost paper-action-button" href="/">
+                  Dashboard
+                </Link>
+                <button className="button secondary" onClick={() => void loadDetail()} type="button">Refresh</button>
+                <button className="button ghost paper-action-button" disabled={reprocessing} onClick={reprocessPaper} type="button">
+                  {reprocessing ? 'Reprocessing...' : 'Reprocess'}
+                </button>
               </div>
-              {item.formula ? <pre className="formula-block">{item.formula}</pre> : null}
-              {item.variable_notes?.length ? (
-                <div className="stack" style={{ gap: 8 }}>
-                  <div className="eyebrow">Variables</div>
-                  {item.variable_notes.map((note, noteIndex) => <div key={noteIndex}>- {note}</div>)}
+            </div>
+            {notice ? <p className="banner">{notice}</p> : null}
+            {output?.fallback_mode ? <p className="banner">This paper completed in fallback mode because Gemini was unavailable.</p> : null}
+          </div>
+
+          {view === 'summary' ? (
+            <div className="paper-content-card">
+              <div className="paper-content-header">
+                <h3>Abstract Summary</h3>
+              </div>
+              <p className="paper-summary-text">{output?.summary || 'Summary not available yet.'}</p>
+              {(output?.sections || []).length ? (
+                <div className="paper-summary-sections">
+                  {(output?.sections || []).map((section, index) => (
+                    <div key={index} className="paper-summary-section">
+                      <strong>{section.title}</strong>
+                      <p>{section.summary}</p>
+                    </div>
+                  ))}
                 </div>
               ) : null}
-              <p className="muted">{item.explanation}</p>
-              {item.importance ? <p><strong>Why it matters:</strong> {item.importance}</p> : null}
-              {item.source_context ? <p className="muted"><strong>Recovered from:</strong> {item.source_context}</p> : null}
             </div>
-          ))}
-        </div>
-      ) : null}
+          ) : null}
 
-      {view === 'implementation' ? (
-        <div className="grid two">
-          <div className="card stack">
-            <h3>Implementation steps</h3>
-            {(output?.implementation_steps || []).map((item, index) => (
-              <div key={index} className="section-block">
-                <strong>{item.step}</strong>
-                <p className="muted">{item.detail}</p>
+          {view === 'insights' ? (
+            <div className="paper-grid-content">
+              <div className="paper-content-card">
+                <h3>Key insights</h3>
+                {(output?.key_insights || []).map((item, index) => <div key={index} className="paper-list-line">- {item}</div>)}
               </div>
-            ))}
-          </div>
-          <div className="card stack">
-            <h3>Sandbox tasks</h3>
-            {(output?.sandbox_tasks || []).map((item, index) => (
-              <div key={index} className="section-block">
-                <strong>{item.title}</strong>
-                <p className="muted">{item.objective}</p>
+              <div className="paper-content-card">
+                <h3>Novel contributions</h3>
+                {(output?.novel_contributions || []).map((item, index) => <div key={index} className="paper-list-line">- {item}</div>)}
               </div>
-            ))}
-          </div>
-        </div>
-      ) : null}
-
-      {view === 'sandbox' ? (
-        <div className="card sandbox-shell">
-          <div className="sandbox-topbar">
-            <div>
-              <div className="eyebrow">Sandbox</div>
-              <h3>Research implementation workspace</h3>
+              <div className="paper-content-card" style={{ gridColumn: '1 / -1' }}>
+                <h3>Limitations</h3>
+                {(output?.limitations || []).map((item, index) => <div key={index} className="paper-list-line">- {item}</div>)}
+              </div>
             </div>
-            <div className="button-row">
-              <button className="button" disabled={running} onClick={runCode} type="button">{running ? 'Running...' : 'Run code'}</button>
-              <button className="button ghost" onClick={() => void copyCode()} type="button">{copyLabel}</button>
-              <button className="button secondary" onClick={resetCode} type="button">Reset</button>
-            </div>
-          </div>
+          ) : null}
 
-          <div className="sandbox-layout">
-            <aside className="sandbox-sidebar">
-              <div className="sandbox-sidebar-title">Extracted assets</div>
-              <div className="sandbox-asset-list">
-                {sandboxAssets.map((asset, index) => (
-                  <div key={`${asset.label}-${index}`} className="sandbox-asset-item">
-                    <div className="sandbox-asset-name">{asset.label}</div>
-                    <div className="sandbox-asset-detail">{asset.detail}</div>
+          {view === 'math' ? (
+            <div className="paper-content-card">
+              <h3>Mathematical Foundation</h3>
+              {(output?.math_explanations || []).map((item, index) => (
+                <div key={index} className="paper-detail-block">
+                  <strong>{item.concept}</strong>
+                  {item.formula ? <pre className="formula-block">{item.formula}</pre> : null}
+                  <p>{item.explanation}</p>
+                </div>
+              ))}
+            </div>
+          ) : null}
+
+          {view === 'implementation' ? (
+            <div className="paper-grid-content">
+              <div className="paper-content-card">
+                <h3>Implementation steps</h3>
+                {(output?.implementation_steps || []).map((item, index) => (
+                  <div key={index} className="paper-detail-block">
+                    <strong>{item.step}</strong>
+                    <p>{item.detail}</p>
                   </div>
                 ))}
               </div>
-            </aside>
+              <div className="paper-content-card">
+                <h3>Sandbox tasks</h3>
+                {(output?.sandbox_tasks || []).map((item, index) => (
+                  <div key={index} className="paper-detail-block">
+                    <strong>{item.title}</strong>
+                    <p>{item.objective}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
 
-            <div className="sandbox-main">
-              <div className="sandbox-tabs">
-                <div className="sandbox-tab active">main_model.py</div>
+          {view === 'sandbox' ? (
+            <div className="card sandbox-shell">
+              <div className="sandbox-topbar">
+                <div>
+                  <div className="eyebrow">Sandbox</div>
+                  <h3>Research implementation workspace</h3>
+                </div>
+                <div className="button-row">
+                  <button className="button" disabled={running} onClick={runCode} type="button">{running ? 'Running...' : 'Run code'}</button>
+                  <button className="button ghost paper-action-button" onClick={() => void copyCode()} type="button">{copyLabel}</button>
+                  <button className="button secondary" onClick={resetCode} type="button">Reset</button>
+                </div>
               </div>
 
-              <div className="sandbox-editor-shell">
-                <div className="sandbox-gutter" aria-hidden="true" ref={sandboxGutterRef}>
-                  <div className="sandbox-gutter-inner">
-                    {codeLines.map((_, index) => (
-                      <div key={index} className="sandbox-line-number">{index + 1}</div>
+              <div className="sandbox-layout">
+                <aside className="sandbox-sidebar">
+                  <div className="sandbox-sidebar-title">Extracted assets</div>
+                  <div className="sandbox-asset-list">
+                    {sandboxAssets.map((asset, index) => (
+                      <div key={`${asset.label}-${index}`} className="sandbox-asset-item">
+                        <div className="sandbox-asset-name">{asset.label}</div>
+                        <div className="sandbox-asset-detail">{asset.detail}</div>
+                      </div>
                     ))}
                   </div>
-                </div>
-                <textarea
-                  className="textarea code-editor sandbox-editor"
-                  ref={sandboxEditorRef}
-                  value={code}
-                  onChange={(e) => setCode(e.target.value)}
-                  onScroll={syncSandboxScroll}
-                  spellCheck={false}
-                  wrap="off"
-                />
-              </div>
+                </aside>
 
-              <div className="sandbox-console-card">
-                <div className="sandbox-console-header">
-                  <div className="sandbox-console-title">Console output</div>
-                  <span className={`sandbox-console-status ${runOutput ? 'ready' : 'idle'}`}>
-                    {runOutput ? 'ready' : 'idle'}
-                  </span>
-                </div>
-                <pre className="console sandbox-console-body">
-                  {consoleLines.map((line, index) => (
-                    <div key={index}>{line || ' '}</div>
-                  ))}
-                </pre>
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : null}
-
-      {view === 'qa' ? (
-        <div className="card qa-shell">
-          <div className="qa-thread">
-            <div className="qa-row qa-row-assistant">
-              <div className="qa-avatar" aria-hidden="true">✦</div>
-              <div className="qa-bubble qa-bubble-assistant">
-                <p>
-                  I&apos;ve finished indexing the uploaded paper <strong>{detail.paper.title}</strong>. I&apos;m ready to explain the
-                  architecture, walk through the math, and turn the formulas into implementation guidance.
-                </p>
-              </div>
-            </div>
-
-            {question ? (
-              <div className="qa-row qa-row-user">
-                <div className="qa-bubble qa-bubble-user">
-                  <p>{question}</p>
-                </div>
-              </div>
-            ) : null}
-
-            {qaResponse ? (
-              <div className="qa-row qa-row-assistant">
-                <div className="qa-avatar" aria-hidden="true">✦</div>
-                <div className="qa-bubble qa-bubble-assistant qa-answer-stack">
-                  <div className="qa-meta">
-                    <span className="badge">{qaResponse.status}</span>
-                    <span className="badge">{qaResponse.question_type}</span>
-                    <span className="badge">{(qaResponse.confidence * 100).toFixed(0)}% confidence</span>
+                <div className="sandbox-main">
+                  <div className="sandbox-tabs">
+                    <div className="sandbox-tab active">main_model.py</div>
                   </div>
 
-                  {answerBlocks.map((block, index) => (
-                    block.type === 'section' ? (
-                      <div key={index} className="qa-panel">
-                        <div className="qa-panel-title">{block.title}</div>
-                        <div className="qa-panel-body">
-                          {block.body.map((line, lineIndex) => (
-                            line.startsWith('-') ? (
-                              <div key={lineIndex} className="qa-bullet">{renderInlineFormatting(line.replace(/^-+\s*/, ''))}</div>
-                            ) : (
-                              <p key={lineIndex}>{renderInlineFormatting(line)}</p>
-                            )
-                          ))}
-                        </div>
+                  <div className="sandbox-editor-shell">
+                    <div className="sandbox-gutter" aria-hidden="true" ref={sandboxGutterRef}>
+                      <div className="sandbox-gutter-inner">
+                        {codeLines.map((_, index) => (
+                          <div key={index} className="sandbox-line-number">{index + 1}</div>
+                        ))}
                       </div>
-                    ) : (
-                      <div key={index} className="qa-code-card">
-                        {block.title ? <div className="qa-code-title">{block.title}</div> : null}
-                        <pre className="console qa-code-block">{block.code}</pre>
-                      </div>
-                    )
-                  ))}
+                    </div>
+                    <textarea
+                      className="textarea code-editor sandbox-editor"
+                      ref={sandboxEditorRef}
+                      value={code}
+                      onChange={(e) => setCode(e.target.value)}
+                      onScroll={syncSandboxScroll}
+                      spellCheck={false}
+                      wrap="off"
+                    />
+                  </div>
 
-                  {qaResponse.evidence.length ? (
-                    <div className="qa-evidence-strip">
-                      {qaResponse.evidence.slice(0, 3).map((item, index) => (
-                        <div key={index} className="qa-evidence-chip" title={item.passage}>
-                          {item.source}
-                        </div>
+                  <div className="sandbox-console-card">
+                    <div className="sandbox-console-header">
+                      <div className="sandbox-console-title">Console output</div>
+                      <span className={`sandbox-console-status ${runOutput ? 'ready' : 'idle'}`}>
+                        {runOutput ? 'ready' : 'idle'}
+                      </span>
+                    </div>
+                    <pre className="console sandbox-console-body">
+                      {consoleLines.map((line, index) => (
+                        <div key={index}>{line || ' '}</div>
+                      ))}
+                    </pre>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : null}
+
+          {view === 'qa' ? (
+            <div className="card qa-shell">
+              <div className="qa-thread">
+                {qaResponse ? (
+                  <div className="qa-row qa-row-assistant">
+                    <div className="qa-avatar" aria-hidden="true">Q</div>
+                    <div className="qa-bubble qa-bubble-assistant qa-answer-stack">
+                      {answerBlocks.map((block, index) => (
+                        block.type === 'section' ? (
+                          <div key={index} className="qa-panel">
+                            <div className="qa-panel-title">{block.title}</div>
+                            <div className="qa-panel-body">
+                              {block.body.map((line, lineIndex) => (
+                                line.startsWith('-') ? (
+                                  <div key={lineIndex} className="qa-bullet">{renderInlineFormatting(line.replace(/^-+\s*/, ''))}</div>
+                                ) : (
+                                  <p key={lineIndex}>{renderInlineFormatting(line)}</p>
+                                )
+                              ))}
+                            </div>
+                          </div>
+                        ) : (
+                          <div key={index} className="qa-code-card">
+                            {block.title ? <div className="qa-code-title">{block.title}</div> : null}
+                            <pre className="console qa-code-block">{block.code}</pre>
+                          </div>
+                        )
                       ))}
                     </div>
-                  ) : null}
-                </div>
+                  </div>
+                ) : (
+                  <div className="qa-row qa-row-assistant">
+                    <div className="qa-avatar" aria-hidden="true">Q</div>
+                    <div className="qa-bubble qa-bubble-assistant">
+                      <p>Ask anything about the research paper.</p>
+                    </div>
+                  </div>
+                )}
               </div>
-            ) : (
-              <div className="qa-row qa-row-assistant">
-                <div className="qa-avatar" aria-hidden="true">✦</div>
-                <div className="qa-bubble qa-bubble-assistant">
-                  <p>Ask about formulas, derivations, implementation choices, limitations, or how to turn the paper into code.</p>
-                </div>
-              </div>
-            )}
-          </div>
 
-          <div className="qa-composer">
-            <textarea
-              className="textarea qa-input"
-              value={question}
-              onChange={(e) => setQuestion(e.target.value)}
-              placeholder="Ask anything about the research paper..."
-            />
-            <button className="button qa-send" disabled={!question || asking} onClick={askQuestion} type="button">
-              {asking ? 'Thinking...' : 'Send'}
-            </button>
-          </div>
-        </div>
-      ) : null}
-    </div>
+              <div className="qa-composer">
+                <textarea
+                  className="textarea qa-input"
+                  value={question}
+                  onChange={(e) => setQuestion(e.target.value)}
+                  placeholder="Ask anything about the research paper..."
+                />
+                <button className="button qa-send" disabled={!question || asking} onClick={askQuestion} type="button">
+                  {asking ? 'Thinking...' : 'Send'}
+                </button>
+              </div>
+            </div>
+          ) : null}
+        </section>
+      </div>
+    </section>
   );
 }

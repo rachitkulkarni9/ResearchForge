@@ -140,7 +140,10 @@ export default function HomePage() {
 
             <div className="landing-copy-stack">
               <div className="eyebrow landing-eyebrow">Research Workspace</div>
-              <h1>Build what the paper only begins.</h1>
+              <h1>
+                <span>Turn research into reality.</span>
+                <span>Run it. Break it. Learn it.</span>
+              </h1>
               <p>Read faster, build sooner, and test ideas in one workspace.</p>
             </div>
 
@@ -180,18 +183,7 @@ export default function HomePage() {
       ) : null}
 
       {!ready ? <div className="card"><p className="muted">Loading workspace...</p></div> : null}
-      {ready && session ? (
-        <>
-          <section className="hero">
-            <h1>ResearchForge turns research papers into working sandboxes.</h1>
-            <p>
-              Upload a formula-heavy ML paper, let a modular Vertex AI agent pipeline extract the core ideas,
-              then iterate in an executable Python sandbox with implementation guidance and Q&amp;A.
-            </p>
-          </section>
-          <DashboardClient session={session} onLoggedOut={() => setSession(null)} />
-        </>
-      ) : null}
+      {ready && session ? <DashboardClient session={session} onLoggedOut={() => setSession(null)} /> : null}
     </main>
   );
 }

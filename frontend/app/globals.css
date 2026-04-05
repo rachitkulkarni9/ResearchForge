@@ -85,15 +85,16 @@ img {
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  gap: 28px;
+  gap: 0;
   min-height: 100vh;
-  padding: 0 32px 36px;
+  padding: 0;
   border-radius: 0;
   border: none;
   background:
-    radial-gradient(circle at 18% 18%, rgba(110, 123, 255, 0.26), transparent 28%),
-    radial-gradient(circle at 78% 20%, rgba(255, 143, 180, 0.18), transparent 26%),
-    linear-gradient(145deg, #06091a 0%, #10163a 45%, #071427 100%);
+    radial-gradient(circle at 8% 14%, rgba(92, 187, 255, 0.14), transparent 22%),
+    radial-gradient(circle at 92% 14%, rgba(255, 143, 180, 0.12), transparent 20%),
+    radial-gradient(circle at 90% 88%, rgba(163, 127, 255, 0.12), transparent 18%),
+    linear-gradient(145deg, #060919 0%, #0d1234 48%, #08101d 100%);
   color: var(--landing-text);
   box-shadow: none;
 }
@@ -106,19 +107,19 @@ img {
 }
 
 .landing-backdrop-left {
-  top: -90px;
-  left: -40px;
-  width: 240px;
-  height: 240px;
-  background: radial-gradient(circle, rgba(117, 240, 220, 0.34), transparent 70%);
+  top: 12px;
+  left: 16px;
+  width: 260px;
+  height: 180px;
+  background: radial-gradient(circle, rgba(86, 201, 255, 0.22), transparent 72%);
 }
 
 .landing-backdrop-right {
-  right: -80px;
-  bottom: -60px;
-  width: 280px;
-  height: 280px;
-  background: radial-gradient(circle, rgba(255, 143, 180, 0.25), transparent 70%);
+  right: -40px;
+  bottom: -20px;
+  width: 260px;
+  height: 260px;
+  background: radial-gradient(circle, rgba(255, 143, 180, 0.16), transparent 72%);
 }
 
 .landing-copy,
@@ -133,7 +134,7 @@ img {
   z-index: 0;
   overflow: hidden;
   pointer-events: none;
-  opacity: 0.22;
+  opacity: 0.14;
 }
 
 .landing-artwork::after {
@@ -141,28 +142,29 @@ img {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(90deg, rgba(6, 9, 26, 0.92) 0%, rgba(6, 9, 26, 0.86) 38%, rgba(6, 9, 26, 0.7) 60%, rgba(6, 9, 26, 0.78) 100%),
-    linear-gradient(180deg, rgba(6, 9, 26, 0.12) 0%, rgba(6, 9, 26, 0.42) 100%);
+    linear-gradient(90deg, rgba(5, 8, 24, 0.92) 0%, rgba(5, 8, 24, 0.86) 42%, rgba(5, 8, 24, 0.7) 64%, rgba(5, 8, 24, 0.78) 100%),
+    linear-gradient(180deg, rgba(5, 8, 24, 0.18) 0%, rgba(5, 8, 24, 0.42) 100%);
 }
 
 .landing-artwork img {
   position: absolute;
-  top: 50%;
-  left: 72%;
-  width: min(960px, 64vw);
+  top: 55%;
+  left: 78%;
+  width: min(980px, 60vw);
   height: auto;
-  transform: translate(-50%, -48%);
-  filter: saturate(1.04) brightness(0.92) blur(1.5px);
+  transform: translate(-50%, -50%);
+  filter: saturate(0.92) brightness(0.74) blur(3px);
 }
 
 .landing-copy {
   display: flex;
   flex-direction: column;
-  gap: 36px;
-  width: min(1120px, 100%);
+  gap: 54px;
+  width: min(1440px, 100%);
   margin: 0 auto;
   flex: 1;
-  justify-content: center;
+  justify-content: flex-start;
+  padding: 14px 64px 36px;
 }
 
 .landing-topbar {
@@ -171,17 +173,12 @@ img {
   justify-content: space-between;
   gap: 20px;
   width: 100%;
-  max-width: 100%;
-  margin: 0 auto;
-  padding: 12px 32px;
-  border-radius: 0;
-  border-left: none;
-  border-right: none;
-  border-bottom: 1px solid rgba(149, 163, 255, 0.14);
-  border-top: none;
-  background: rgba(10, 14, 34, 0.5);
+  margin: 0;
+  padding: 14px 0;
+  min-height: 86px;
+  border-bottom: 1px solid rgba(149, 163, 255, 0.1);
   backdrop-filter: blur(16px);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  box-shadow: none;
 }
 
 .landing-nav {
@@ -195,11 +192,11 @@ img {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 104px;
-  padding: 12px 18px;
+  min-width: 122px;
+  padding: 14px 22px;
   border-radius: 999px;
-  border: 1px solid rgba(149, 163, 255, 0.16);
-  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(149, 163, 255, 0.14);
+  background: rgba(255, 255, 255, 0.05);
   color: #edf1ff;
   font-family: "Trebuchet MS", "Segoe UI", sans-serif;
   font-weight: 700;
@@ -228,10 +225,10 @@ img {
   align-items: center;
   gap: 12px;
   width: fit-content;
-  padding: 10px 14px 10px 10px;
+  padding: 11px 18px 11px 11px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.09);
   backdrop-filter: blur(12px);
   font-family: "Trebuchet MS", "Segoe UI", sans-serif;
   font-size: 0.95rem;
@@ -242,8 +239,8 @@ img {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 38px;
+  height: 38px;
   border-radius: 14px;
   background: linear-gradient(135deg, var(--landing-accent), #7b8eff 55%, var(--landing-accent-2));
   color: #091124;
@@ -253,25 +250,30 @@ img {
 .landing-copy-stack {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  max-width: 760px;
+  gap: 16px;
+  max-width: 1080px;
+  padding-top: 48px;
 }
 
 .landing-copy-stack h1 {
   margin: 0;
-  max-width: 760px;
+  max-width: 1120px;
   font-family: "Trebuchet MS", "Segoe UI", sans-serif;
-  font-size: clamp(2.9rem, 5vw, 5.4rem);
+  font-size: clamp(3.3rem, 6.2vw, 5.8rem);
   line-height: 0.96;
   letter-spacing: -0.04em;
 }
 
+.landing-copy-stack h1 span {
+  display: block;
+}
+
 .landing-copy-stack p {
   margin: 0;
-  max-width: 700px;
+  max-width: 720px;
   color: var(--landing-muted);
-  font-size: 1.08rem;
-  line-height: 1.8;
+  font-size: 1.55rem;
+  line-height: 1.6;
 }
 
 .landing-eyebrow,
@@ -283,30 +285,33 @@ img {
 .landing-metrics {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-  width: min(100%, 1040px);
+  gap: 16px;
+  width: min(100%, 1320px);
+  margin-top: 8px;
 }
 
 .landing-metric {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 14px 16px;
+  min-height: 132px;
+  padding: 20px 22px;
   border-radius: 22px;
-  border: 1px solid rgba(141, 154, 255, 0.14);
-  background: rgba(255, 255, 255, 0.04);
-  backdrop-filter: blur(14px);
+  border: 1px solid rgba(141, 154, 255, 0.12);
+  background: rgba(255, 255, 255, 0.045);
+  backdrop-filter: blur(16px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
 .landing-metric strong {
   font-family: "Trebuchet MS", "Segoe UI", sans-serif;
-  font-size: 1.06rem;
+  font-size: 0.98rem;
 }
 
 .landing-metric span {
   color: var(--landing-muted);
-  line-height: 1.6;
-  font-size: 0.95rem;
+  line-height: 1.55;
+  font-size: 0.88rem;
 }
 
 .grid {
@@ -541,7 +546,7 @@ img {
   box-shadow: 0 18px 44px rgba(123, 134, 255, 0.32);
 }
 
-.auth-google {
+.button.ghost.auth-google {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -550,17 +555,19 @@ img {
   padding-block: 9px;
   border: 1px solid #dadce0;
   color: #111827;
-  background: linear-gradient(90deg, #eefcff 0%, #ffffff 100%);
+  background: #ffffff;
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
 }
 
-.auth-google:hover {
-  background: #f8fafc;
+.button.ghost.auth-google:hover {
+  background: #ffffff;
+  color: #111827;
 }
 
-.auth-google:disabled {
+.button.ghost.auth-google:disabled {
   color: rgba(17, 24, 39, 0.75);
-  background: rgba(255, 255, 255, 0.92);
+  background: #ffffff;
+  opacity: 1;
 }
 
 .auth-google-icon {
@@ -724,6 +731,578 @@ img {
 .paper-list {
   display: grid;
   gap: 14px;
+}
+
+.app-dashboard-shell {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  min-height: 100vh;
+  margin-top: 0;
+  overflow: hidden;
+  border-radius: 0;
+  border: none;
+  background: linear-gradient(180deg, rgba(15, 18, 25, 0.98), rgba(10, 12, 18, 1));
+  box-shadow: none;
+  font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+}
+
+.app-sidebar {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 18px 14px;
+  background: rgba(17, 20, 27, 0.96);
+  border-right: 1px solid rgba(92, 99, 127, 0.18);
+}
+
+.app-sidebar-brand {
+  color: #eef2ff;
+  font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+  font-size: 0.98rem;
+  font-weight: 800;
+}
+
+.app-sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 22px 0 auto;
+}
+
+.app-sidebar-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid rgba(95, 104, 138, 0.16);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  color: #eef2ff;
+  font-size: 0.92rem;
+  font-weight: 700;
+  text-align: left;
+}
+
+.app-sidebar-link.active {
+  background: linear-gradient(135deg, rgba(92, 104, 255, 0.22), rgba(127, 139, 255, 0.12));
+  border-color: rgba(108, 121, 255, 0.3);
+}
+
+.app-sidebar-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #7e91ff;
+}
+
+.app-sidebar-footer {
+  padding: 12px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(92, 99, 127, 0.14);
+  color: #f4f6ff;
+}
+
+.app-sidebar-plan {
+  color: #9ca5ca;
+  font-size: 0.8rem;
+  margin-bottom: 4px;
+}
+
+.app-sidebar-user {
+  margin-top: 8px;
+  color: #aab3d6;
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.app-sidebar-logout {
+  width: 100%;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1px solid rgba(149, 163, 255, 0.18);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  color: #eef2ff;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.app-dashboard-main {
+  display: grid;
+  grid-template-columns: minmax(300px, 0.72fr) minmax(0, 1.28fr);
+  gap: 18px;
+  padding: 18px 22px;
+}
+
+.app-dashboard-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.app-dashboard-panel-left {
+  padding-right: 18px;
+}
+
+.app-dashboard-panel-right {
+  padding-left: 22px;
+  border-left: 1px solid rgba(92, 99, 127, 0.22);
+}
+
+.app-dashboard-hero {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.app-dashboard-hero h2 {
+  margin: 0 0 6px;
+  color: #f4f6ff;
+  font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+  font-size: clamp(1.5rem, 2.1vw, 2rem);
+  line-height: 1.06;
+}
+
+.app-dashboard-copy {
+  margin: 0;
+  max-width: 430px;
+  color: #aab3d6;
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+
+.app-dashboard-eyebrow {
+  color: #8f99ce;
+  font-size: 0.72rem;
+}
+
+.app-quickstart-card,
+.app-paper-card,
+.app-empty-state {
+  border-radius: 18px;
+  border: 1px solid rgba(92, 99, 127, 0.18);
+  background: rgba(23, 26, 34, 0.92);
+}
+
+.app-quickstart-card {
+  padding: 16px;
+}
+
+.app-section-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+
+.app-section-header h3 {
+  margin: 0;
+  color: #f3f5ff;
+  font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+  font-size: 1rem;
+}
+
+.app-section-header span {
+  color: #8f99ce;
+  font-size: 0.76rem;
+}
+
+.app-upload-trigger {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  margin-top: 12px;
+  padding: 12px 14px;
+  border: none;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #6673ff 0%, #5365ff 100%);
+  color: white;
+  font-size: 0.92rem;
+  font-weight: 700;
+  box-shadow: 0 18px 38px rgba(88, 104, 255, 0.24);
+}
+
+.app-upload-trigger-arrow {
+  font-size: 1.1rem;
+}
+
+.app-feature-note {
+  margin-top: 12px;
+  color: #aab3d6;
+  font-size: 0.84rem;
+  line-height: 1.5;
+}
+
+.app-library-header {
+  margin-bottom: 4px;
+}
+
+.app-paper-library {
+  display: grid;
+  gap: 14px;
+}
+
+.app-library-pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 6px;
+  color: #aab3d6;
+  font-size: 0.9rem;
+}
+
+.app-library-pagination-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.app-page-button {
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(149, 163, 255, 0.18);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  color: #eef2ff;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.app-page-button:disabled {
+  opacity: 0.45;
+}
+
+.app-paper-card {
+  padding: 16px;
+}
+
+.app-paper-card-main {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: flex-start;
+}
+
+.app-paper-card-link {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.app-paper-card-link strong {
+  color: #f4f6ff;
+  font-size: 0.96rem;
+  line-height: 1.45;
+}
+
+.app-paper-card-link span {
+  color: #9ca5ca;
+  font-size: 0.84rem;
+  line-height: 1.55;
+  word-break: break-word;
+}
+
+.app-paper-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.app-status-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(95, 104, 138, 0.18);
+  color: #eef2ff;
+  text-transform: capitalize;
+  font-size: 0.72rem;
+}
+
+.app-status-chip.completed {
+  background: rgba(34, 197, 94, 0.16);
+  color: #96f7b7;
+}
+
+.app-status-chip.processing {
+  background: rgba(99, 102, 241, 0.18);
+  color: #bcc6ff;
+}
+
+.app-status-chip.failed {
+  background: rgba(239, 68, 68, 0.16);
+  color: #fecaca;
+}
+
+.app-status-chip.pending {
+  background: rgba(148, 163, 184, 0.16);
+  color: #d2daef;
+}
+
+.app-delete-link {
+  border: none;
+  background: transparent;
+  color: #9ca5ca;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.app-empty-state {
+  padding: 24px 20px;
+  text-align: center;
+}
+
+.app-empty-state h4 {
+  margin: 0 0 10px;
+  color: #f4f6ff;
+  font-size: 1.12rem;
+}
+
+.app-empty-state p {
+  margin: 0;
+  color: #9ca5ca;
+  line-height: 1.7;
+}
+
+.upload-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(5, 8, 18, 0.72);
+  backdrop-filter: blur(8px);
+}
+
+.upload-modal-card {
+  position: relative;
+  width: min(520px, 100%);
+  border-radius: 20px;
+  border: 1px solid rgba(92, 99, 127, 0.22);
+  background: rgba(20, 23, 31, 0.98);
+  box-shadow: 0 28px 80px rgba(5, 8, 18, 0.46);
+  padding: 18px;
+}
+
+.upload-modal-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  color: #eef2ff;
+  font-weight: 700;
+}
+
+.upload-dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+  min-height: 320px;
+  justify-content: center;
+  border-radius: 18px;
+  border: 1px dashed rgba(99, 109, 146, 0.28);
+  background: linear-gradient(180deg, rgba(23, 26, 34, 0.98), rgba(17, 20, 26, 0.98));
+  padding: 28px;
+}
+
+.upload-dropzone-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  background: rgba(92, 104, 255, 0.18);
+  color: #dce1ff;
+  font-size: 1.4rem;
+  font-weight: 800;
+}
+
+.upload-dropzone h3 {
+  margin: 0;
+  color: #f4f6ff;
+  font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+  font-size: 1.7rem;
+}
+
+.upload-dropzone p {
+  margin: 0;
+  color: #aab3d6;
+}
+
+.upload-browse-button,
+.app-upload-confirm {
+  min-width: 170px;
+}
+
+.upload-browse-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 10px;
+  padding: 12px 18px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #7b86ff 0%, #4f6dff 100%);
+  color: white;
+  font-weight: 700;
+  box-shadow: 0 18px 40px rgba(88, 104, 255, 0.26);
+}
+
+.upload-file-input {
+  display: none;
+}
+
+.upload-selected-file {
+  color: #eef2ff;
+  font-size: 0.92rem;
+}
+
+.app-upload-confirm {
+  margin-top: 6px;
+}
+
+.paper-workspace-shell .app-sidebar {
+  padding-top: 20px;
+}
+
+.paper-main-shell {
+  display: block;
+  padding: 18px 22px;
+}
+
+.paper-summary-panel {
+  gap: 16px;
+}
+
+.paper-hero-card,
+.paper-content-card {
+  border-radius: 18px;
+  border: 1px solid rgba(92, 99, 127, 0.18);
+  background: rgba(23, 26, 34, 0.92);
+}
+
+.paper-hero-card {
+  padding: 18px;
+}
+
+.paper-meta-eyebrow {
+  color: #8f99ce;
+}
+
+.paper-title {
+  margin: 0 0 8px;
+  max-width: 860px;
+  color: #f4f6ff;
+  font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+  font-size: clamp(2rem, 3vw, 3rem);
+  line-height: 1.06;
+  letter-spacing: -0.03em;
+}
+
+.paper-filename {
+  margin: 0;
+  color: #9ca5ca;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.paper-content-card {
+  padding: 18px;
+}
+
+.paper-content-card h3 {
+  margin: 0 0 14px;
+  color: #f4f6ff;
+  font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+  font-size: 1.1rem;
+}
+
+.paper-content-header {
+  margin-bottom: 14px;
+}
+
+.paper-summary-text,
+.paper-detail-block p,
+.paper-summary-section p {
+  margin: 0;
+  color: #b9c3e6;
+  font-size: 0.9rem;
+  line-height: 1.7;
+}
+
+.paper-summary-sections,
+.paper-grid-content {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.paper-grid-content {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.paper-summary-section,
+.paper-detail-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(92, 99, 127, 0.18);
+}
+
+.paper-summary-section strong,
+.paper-detail-block strong {
+  color: #f4f6ff;
+  font-size: 0.96rem;
+}
+
+.paper-list-line {
+  color: #b9c3e6;
+  font-size: 0.9rem;
+  line-height: 1.7;
+}
+
+.paper-action-button {
+  border-color: rgba(149, 163, 255, 0.18);
+  background: rgba(255, 255, 255, 0.04);
+  color: #f4f6ff;
+}
+
+.paper-action-button:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.paper-main-shell .button.ghost {
+  border-color: rgba(149, 163, 255, 0.22);
+  background: rgba(255, 255, 255, 0.04);
+  color: #f4f6ff;
+}
+
+.paper-main-shell .button.ghost:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.app-quickstart-card .button.ghost {
+  border-color: rgba(149, 163, 255, 0.22);
+  background: rgba(255, 255, 255, 0.04);
+  color: #f4f6ff;
+}
+
+.app-quickstart-card .button.ghost:hover {
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .paper-row {
@@ -1245,9 +1824,47 @@ pre.console {
 }
 
 @media (max-width: 900px) {
+  .app-dashboard-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .app-sidebar {
+    gap: 16px;
+    border-right: none;
+    border-bottom: 1px solid rgba(92, 99, 127, 0.18);
+  }
+
+  .app-dashboard-main {
+    grid-template-columns: 1fr;
+    padding: 18px;
+  }
+
+  .app-dashboard-panel-right {
+    padding-left: 0;
+    border-left: none;
+    border-top: 1px solid rgba(92, 99, 127, 0.18);
+    padding-top: 18px;
+  }
+
+  .app-paper-card-main {
+    flex-direction: column;
+  }
+
+  .paper-main-shell {
+    padding: 18px;
+  }
+
+  .paper-grid-content {
+    grid-template-columns: 1fr;
+  }
+
+  .upload-modal-card {
+    width: min(100%, 520px);
+  }
+
   .landing-shell {
     min-height: 100vh;
-    padding: 0 16px 28px;
+    padding: 0 0 24px;
   }
 
   .landing-topbar,
@@ -1257,12 +1874,14 @@ pre.console {
   }
 
   .landing-topbar {
-    padding: 10px 16px 12px;
+    padding: 12px 0;
+    min-height: auto;
   }
 
   .landing-copy {
-    gap: 28px;
+    gap: 30px;
     justify-content: flex-start;
+    padding: 18px 18px 24px;
   }
 
   .landing-nav {
@@ -1284,12 +1903,12 @@ pre.console {
   }
 
   .landing-artwork {
-    opacity: 0.16;
+    opacity: 0.12;
   }
 
   .landing-artwork img {
     left: 50%;
-    width: min(840px, 120vw);
+    width: min(780px, 128vw);
     transform: translate(-50%, -50%);
   }
 
@@ -1324,16 +1943,75 @@ pre.console {
 }
 
 @media (max-width: 640px) {
+  .app-dashboard-shell {
+    margin-top: 0;
+    border-radius: 0;
+  }
+
+  .app-sidebar,
+  .app-dashboard-main {
+    padding: 14px;
+  }
+
+  .app-dashboard-hero {
+    flex-direction: column;
+  }
+
+  .app-quickstart-card,
+  .app-paper-card,
+  .app-empty-state {
+    border-radius: 18px;
+  }
+
+  .upload-modal-backdrop {
+    padding: 14px;
+  }
+
+  .upload-dropzone {
+    min-height: 300px;
+    padding: 22px 16px;
+  }
+
+  .upload-dropzone h3 {
+    font-size: 1.6rem;
+  }
+
+  .paper-title {
+    font-size: clamp(1.6rem, 8vw, 2.2rem);
+  }
+
+  .paper-hero-card,
+  .paper-content-card {
+    padding: 14px;
+    border-radius: 16px;
+  }
+
   .shell {
     padding: 0;
   }
 
   .landing-copy-stack h1 {
-    font-size: clamp(2.4rem, 12vw, 3.7rem);
+    font-size: clamp(2.7rem, 14vw, 4.2rem);
   }
 
   .landing-brand {
     font-size: 0.88rem;
+  }
+
+  .landing-copy {
+    padding: 14px 14px 22px;
+  }
+
+  .landing-topbar {
+    padding: 10px 0 12px;
+  }
+
+  .landing-copy-stack {
+    padding-top: 24px;
+  }
+
+  .landing-copy-stack p {
+    font-size: 0.96rem;
   }
 
   .auth-page-shell {
