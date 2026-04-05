@@ -22,12 +22,6 @@ interface PaperWorkspaceClientProps {
   view: PaperView;
 }
 
-interface QAThreadMessage {
-  role: 'user' | 'assistant';
-  text: string;
-  response?: QAResponse;
-}
-
 function humanizePaperLabel(value: string) {
   return value
     .replace(/\.pdf$/i, '')
@@ -142,7 +136,7 @@ export function PaperWorkspaceClient({ paperId, view }: PaperWorkspaceClientProp
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [question, setQuestion] = useState('');
-  const [qaMessages, setQaMessages] = useState<QAThreadMessage[]>([]);
+  const [qaResponse, setQaResponse] = useState<QAResponse | null>(null);
   const [asking, setAsking] = useState(false);
   const [reprocessing, setReprocessing] = useState(false);
   const [code, setCode] = useState('');
@@ -190,37 +184,22 @@ export function PaperWorkspaceClient({ paperId, view }: PaperWorkspaceClientProp
   }
 
   async function askQuestion() {
-    const trimmedQuestion = question.trim();
-    if (!trimmedQuestion) {
-      return;
-    }
-
     setAsking(true);
-    setQuestion('');
-    setQaMessages((current) => [...current, { role: 'user', text: trimmedQuestion }]);
-
     try {
       const data = await apiFetch<QAResponse>('/ask-question', {
         method: 'POST',
-        body: JSON.stringify({ paper_id: paperId, question: trimmedQuestion }),
+        body: JSON.stringify({ paper_id: paperId, question }),
       });
-      setQaMessages((current) => [
-        ...current,
-        { role: 'assistant', text: data.answer, response: data },
-      ]);
+      setQaResponse(data);
     } catch (err) {
-      const fallbackResponse: QAResponse = {
+      setQaResponse({
         status: 'insufficient_evidence',
         question_type: 'missing_info',
         answer: err instanceof Error ? err.message : 'Question failed',
         evidence: [],
         confidence: 0,
         citations: [],
-      };
-      setQaMessages((current) => [
-        ...current,
-        { role: 'assistant', text: fallbackResponse.answer, response: fallbackResponse },
-      ]);
+      });
     } finally {
       setAsking(false);
     }
@@ -280,6 +259,7 @@ export function PaperWorkspaceClient({ paperId, view }: PaperWorkspaceClientProp
 
   const output = detail.output;
   const activeHref = pathname.split('/').pop() === paperId ? '' : pathname.split('/').pop();
+  const answerBlocks = qaResponse ? parseAnswerBlocks(qaResponse.answer) : [];
   const sandboxAssets = buildSandboxAssets(detail);
   const codeLines = code.split('\n');
   const consoleLines = (runOutput || 'Run the sandbox to see stdout and stderr here.').split('\n');
@@ -481,49 +461,33 @@ export function PaperWorkspaceClient({ paperId, view }: PaperWorkspaceClientProp
           {view === 'qa' ? (
             <div className="card qa-shell">
               <div className="qa-thread">
-                {qaMessages.length ? (
-                  qaMessages.map((message, messageIndex) => {
-                    if (message.role === 'user') {
-                      return (
-                        <div key={messageIndex} className="qa-row qa-row-user">
-                          <div className="qa-bubble qa-bubble-user">
-                            <p>{message.text}</p>
+                {qaResponse ? (
+                  <div className="qa-row qa-row-assistant">
+                    <div className="qa-avatar" aria-hidden="true">Q</div>
+                    <div className="qa-bubble qa-bubble-assistant qa-answer-stack">
+                      {answerBlocks.map((block, index) => (
+                        block.type === 'section' ? (
+                          <div key={index} className="qa-panel">
+                            <div className="qa-panel-title">{block.title}</div>
+                            <div className="qa-panel-body">
+                              {block.body.map((line, lineIndex) => (
+                                line.startsWith('-') ? (
+                                  <div key={lineIndex} className="qa-bullet">{renderInlineFormatting(line.replace(/^-+\s*/, ''))}</div>
+                                ) : (
+                                  <p key={lineIndex}>{renderInlineFormatting(line)}</p>
+                                )
+                              ))}
+                            </div>
                           </div>
-                          <div className="qa-avatar" aria-hidden="true">Y</div>
-                        </div>
-                      );
-                    }
-
-                    const answerBlocks = parseAnswerBlocks(message.response?.answer || message.text);
-                    return (
-                      <div key={messageIndex} className="qa-row qa-row-assistant">
-                        <div className="qa-avatar" aria-hidden="true">Q</div>
-                        <div className="qa-bubble qa-bubble-assistant qa-answer-stack">
-                          {answerBlocks.map((block, index) => (
-                            block.type === 'section' ? (
-                              <div key={index} className="qa-panel">
-                                <div className="qa-panel-title">{block.title}</div>
-                                <div className="qa-panel-body">
-                                  {block.body.map((line, lineIndex) => (
-                                    line.startsWith('-') ? (
-                                      <div key={lineIndex} className="qa-bullet">{renderInlineFormatting(line.replace(/^-+\s*/, ''))}</div>
-                                    ) : (
-                                      <p key={lineIndex}>{renderInlineFormatting(line)}</p>
-                                    )
-                                  ))}
-                                </div>
-                              </div>
-                            ) : (
-                              <div key={index} className="qa-code-card">
-                                {block.title ? <div className="qa-code-title">{block.title}</div> : null}
-                                <pre className="console qa-code-block">{block.code}</pre>
-                              </div>
-                            )
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })
+                        ) : (
+                          <div key={index} className="qa-code-card">
+                            {block.title ? <div className="qa-code-title">{block.title}</div> : null}
+                            <pre className="console qa-code-block">{block.code}</pre>
+                          </div>
+                        )
+                      ))}
+                    </div>
+                  </div>
                 ) : (
                   <div className="qa-row qa-row-assistant">
                     <div className="qa-avatar" aria-hidden="true">Q</div>
