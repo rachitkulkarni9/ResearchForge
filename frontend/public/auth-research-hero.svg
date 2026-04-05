@@ -1,0 +1,78 @@
+<svg width="960" height="780" viewBox="0 0 960 780" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="110" y1="50" x2="865" y2="702" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#11153A"/>
+      <stop offset="0.45" stop-color="#201C67"/>
+      <stop offset="1" stop-color="#092645"/>
+    </linearGradient>
+    <linearGradient id="panel" x1="639" y1="181" x2="777" y2="574" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FEA6C6"/>
+      <stop offset="0.48" stop-color="#6B8BFF"/>
+      <stop offset="1" stop-color="#51E0D4"/>
+    </linearGradient>
+    <linearGradient id="card" x1="182" y1="470" x2="470" y2="612" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6B8BFF" stop-opacity="0.52"/>
+      <stop offset="1" stop-color="#55E4D9" stop-opacity="0.18"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(549 267) rotate(74.1342) scale(310.664 356.196)">
+      <stop stop-color="#FF8EB8"/>
+      <stop offset="0.38" stop-color="#B774FF" stop-opacity="0.78"/>
+      <stop offset="1" stop-color="#B774FF" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="halo" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(757 234) rotate(132.252) scale(170.919 204.452)">
+      <stop stop-color="#63EDDA" stop-opacity="0.96"/>
+      <stop offset="1" stop-color="#63EDDA" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="blur" x="0" y="0" width="960" height="780" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="40"/>
+    </filter>
+  </defs>
+  <rect x="42" y="34" width="876" height="712" rx="40" fill="url(#bg)"/>
+  <g filter="url(#blur)" opacity="0.8">
+    <ellipse cx="487" cy="276" rx="209" ry="154" fill="url(#glow)"/>
+    <ellipse cx="749" cy="224" rx="120" ry="98" fill="url(#halo)"/>
+    <ellipse cx="281" cy="620" rx="158" ry="92" fill="#7C57FF" fill-opacity="0.4"/>
+  </g>
+  <path d="M87 115C196 98 262 155 330 209C412 275 502 326 609 291C694 263 746 180 868 191" stroke="#7A8FFF" stroke-opacity="0.35" stroke-width="2"/>
+  <path d="M112 214C226 178 286 254 378 309C472 365 558 382 671 339C763 303 819 223 882 226" stroke="#62E6D7" stroke-opacity="0.26" stroke-width="2"/>
+  <circle cx="255" cy="180" r="4" fill="#7A8FFF"/>
+  <circle cx="333" cy="157" r="6" fill="#62E6D7"/>
+  <circle cx="620" cy="198" r="5" fill="#F7A3C4"/>
+  <circle cx="764" cy="175" r="7" fill="#82EDDE"/>
+  <circle cx="699" cy="246" r="4" fill="#7A8FFF"/>
+  <rect x="114" y="124" width="126" height="44" rx="22" fill="white" fill-opacity="0.08" stroke="white" stroke-opacity="0.16"/>
+  <text x="145" y="152" fill="#F8F7FF" font-family="Segoe UI, Arial, sans-serif" font-size="22" font-weight="700">ResearchForge</text>
+  <g opacity="0.9">
+    <rect x="652" y="150" width="162" height="278" rx="24" fill="#12214A" fill-opacity="0.74" stroke="url(#panel)" stroke-width="2"/>
+    <rect x="678" y="188" width="109" height="17" rx="8.5" fill="white" fill-opacity="0.12"/>
+    <rect x="678" y="223" width="84" height="10" rx="5" fill="#7E91FF"/>
+    <rect x="678" y="249" width="58" height="10" rx="5" fill="#59E2D7"/>
+    <rect x="678" y="307" width="108" height="82" rx="18" fill="white" fill-opacity="0.06" stroke="white" stroke-opacity="0.12"/>
+    <path d="M699 356L722 331L740 346L760 319" stroke="#FFB1C9" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="699" cy="356" r="8" fill="#6A85FF"/>
+    <circle cx="722" cy="331" r="8" fill="#59E2D7"/>
+    <circle cx="740" cy="346" r="8" fill="#FFB1C9"/>
+    <circle cx="760" cy="319" r="8" fill="#6A85FF"/>
+  </g>
+  <g opacity="0.96">
+    <rect x="173" y="430" width="330" height="180" rx="28" fill="url(#card)" stroke="white" stroke-opacity="0.14"/>
+    <text x="206" y="476" fill="#F7F8FF" font-family="Segoe UI, Arial, sans-serif" font-size="31" font-weight="700">Decode complex papers.</text>
+    <text x="206" y="518" fill="#D4DAFF" font-family="Segoe UI, Arial, sans-serif" font-size="22">Summaries, insights, math notes, and executable</text>
+    <text x="206" y="548" fill="#D4DAFF" font-family="Segoe UI, Arial, sans-serif" font-size="22">sandbox code in one research workspace.</text>
+    <rect x="206" y="573" width="123" height="17" rx="8.5" fill="#59E2D7" fill-opacity="0.82"/>
+    <rect x="339" y="573" width="98" height="17" rx="8.5" fill="#FFB1C9" fill-opacity="0.8"/>
+  </g>
+  <g opacity="0.92">
+    <path d="M582 430C626 430 662 465 662 509V570H502V509C502 465 538 430 582 430Z" fill="#121A39"/>
+    <rect x="516" y="510" width="132" height="104" rx="20" fill="#17224A" stroke="white" stroke-opacity="0.09"/>
+    <rect x="531" y="528" width="102" height="13" rx="6.5" fill="white" fill-opacity="0.12"/>
+    <rect x="531" y="556" width="72" height="11" rx="5.5" fill="#7E91FF"/>
+    <rect x="531" y="579" width="88" height="11" rx="5.5" fill="#59E2D7"/>
+    <circle cx="582" cy="408" r="26" fill="#FFE1CF"/>
+    <path d="M555 407C557 387 570 373 582 373C594 373 608 387 610 407" fill="#2A255D"/>
+    <rect x="563" y="438" width="38" height="55" rx="19" fill="#F7A3C4"/>
+  </g>
+  <path d="M74 634C151 585 222 599 311 635C420 680 511 694 626 650C719 615 793 597 886 635V746H74V634Z" fill="#0C1330"/>
+  <path d="M74 652C145 617 216 633 309 664C407 697 506 706 621 672C736 637 801 629 886 665V746H74V652Z" fill="#11204B"/>
+  <path d="M74 680C168 646 241 666 332 694C435 726 524 731 645 699C735 675 800 674 886 705V746H74V680Z" fill="#143062"/>
+</svg>
