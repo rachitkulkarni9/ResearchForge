@@ -173,9 +173,11 @@ img {
   width: 100%;
   max-width: 100%;
   margin: 0 auto;
-  padding: 10px 32px;
+  padding: 12px 32px;
   border-radius: 0;
-  border: 1px solid rgba(149, 163, 255, 0.14);
+  border-left: none;
+  border-right: none;
+  border-bottom: 1px solid rgba(149, 163, 255, 0.14);
   border-top: none;
   background: rgba(10, 14, 34, 0.5);
   backdrop-filter: blur(16px);
