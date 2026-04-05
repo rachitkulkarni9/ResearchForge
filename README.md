@@ -11,6 +11,29 @@ ResearchForge is a SaaS platform that turns research papers into structured anal
 - Database: Firestore for users, workspaces, papers, jobs, outputs, usage, and sandbox sessions
 - Deployment: Google Cloud Run
 
+## Hackathon Compliance
+
+### Development Rules
+
+- All work on this project was started and completed during the hackathon window: April 3, 9:30 PM to April 5, 10:30 AM MST.
+- Pre-written code beyond basic boilerplate was not used.
+- The project includes meaningful development completed during the event.
+
+### AI and Tool Usage
+
+- Tools used: OpenAI Codex/ChatGPT for pair-programming assistance, Google Vertex AI/Gemini for product functionality, Firebase, FastAPI, Next.js, and Google Cloud services.
+- Core logic, system design, product decisions, and implementation were completed by the team.
+
+### Integrity and Fair Use
+
+- This project is original work created by the team for this hackathon.
+- The project is not reused from a prior submission.
+- The same project is not being submitted to another concurrent hackathon.
+- All contributors must be listed on Devpost.
+- Submission details may be cross-checked across platforms.
+- Plagiarism detection tools may be used by organizers.
+- Violations may result in penalties, disqualification, and reporting to MLH.
+
 ## Monorepo Structure
 
 ```txt
