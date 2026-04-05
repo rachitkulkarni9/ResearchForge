@@ -1,10 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { onIdTokenChanged, signOut, type User } from 'firebase/auth';
 
 import { AuthPanel } from '@/components/AuthPanel';
 import { DashboardClient } from '@/components/DashboardClient';
 import { apiFetch } from '@/lib/api';
+import { ensureFirebasePersistence, firebaseAuth, waitForFirebaseAuthReady } from '@/lib/firebase';
 
 interface SessionUser {
   id: string;
@@ -32,18 +34,59 @@ export default function HomePage() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    async function loadSession() {
+    let active = true;
+    let unsubscribe: () => void = () => {};
+
+    async function syncSession(user: User | null) {
+      if (!active) {
+        return;
+      }
+      if (!user) {
+        setSession(null);
+        setReady(true);
+        return;
+      }
+
       try {
         const data = await apiFetch<SessionResponse>('/auth/session');
-        setSession(data);
+        if (active) {
+          setSession(data);
+        }
       } catch {
-        setSession(null);
+        if (active) {
+          setSession(null);
+          if (firebaseAuth) {
+            await signOut(firebaseAuth);
+          }
+        }
       } finally {
-        setReady(true);
+        if (active) {
+          setReady(true);
+        }
       }
     }
 
-    void loadSession();
+    async function bootstrap() {
+      await ensureFirebasePersistence();
+      await waitForFirebaseAuthReady();
+
+      if (!firebaseAuth) {
+        setReady(true);
+        return;
+      }
+
+      unsubscribe = onIdTokenChanged(firebaseAuth, (user) => {
+        void syncSession(user);
+      });
+
+      await syncSession(firebaseAuth.currentUser);
+    }
+
+    void bootstrap();
+    return () => {
+      active = false;
+      unsubscribe();
+    };
   }, []);
 
   return (

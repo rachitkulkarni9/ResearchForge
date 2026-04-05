@@ -2,8 +2,10 @@
 
 import Link from 'next/link';
 import { ChangeEvent, useEffect, useState } from 'react';
+import { signOut } from 'firebase/auth';
 
 import { apiFetch } from '@/lib/api';
+import { firebaseAuth } from '@/lib/firebase';
 import type { PaperSummary } from '@/types/paper';
 
 interface UploadPaperResult {
@@ -45,7 +47,11 @@ export function DashboardClient({ session, onLoggedOut }: DashboardClientProps) 
   }, []);
 
   async function logout() {
-    await apiFetch<{ ok: boolean }>('/auth/logout', { method: 'POST' });
+    if (firebaseAuth) {
+      await signOut(firebaseAuth);
+    } else {
+      await apiFetch<{ ok: boolean }>('/auth/logout', { method: 'POST' });
+    }
     onLoggedOut();
   }
 
