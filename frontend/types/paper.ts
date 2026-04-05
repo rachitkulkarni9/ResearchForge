@@ -16,7 +16,7 @@ export interface StructuredOutput {
   key_insights: string[];
   novel_contributions: string[];
   limitations: string[];
-  math_explanations: { concept: string; formula: string; variable_notes: string[]; explanation: string; importance: string }[];
+  math_explanations: { concept: string; formula: string; variable_notes: string[]; explanation: string; importance: string; source_type?: string; source_context?: string }[];
   implementation_steps: { step: string; detail: string }[];
   sandbox_tasks: { title: string; objective: string }[];
   starter_code: string;
@@ -25,8 +25,8 @@ export interface StructuredOutput {
 }
 
 export interface QAResponse {
-  status: 'stated' | 'inferred' | 'not_stated' | 'insufficient_evidence';
-  question_type: 'direct_fact' | 'synthesis' | 'inference' | 'missing_info';
+  status: 'stated' | 'inferred' | 'hybrid' | 'not_stated' | 'insufficient_evidence';
+  question_type: 'direct_fact' | 'synthesis' | 'inference' | 'missing_info' | 'hybrid_reasoning';
   answer: string;
   evidence: { source: string; passage: string }[];
   confidence: number;

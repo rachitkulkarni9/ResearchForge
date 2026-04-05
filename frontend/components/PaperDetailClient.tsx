@@ -23,7 +23,7 @@ export function PaperDetailClient({ paperId }: PaperDetailClientProps) {
     try {
       const data = await apiFetch<PaperDetail>(`/paper/${paperId}`);
       setDetail(data);
-      setCode(data.sandbox?.current_code || data.output?.starter_code || 'print("PaperLab")\n');
+      setCode(data.sandbox?.current_code || data.output?.starter_code || 'print("ResearchForge")\n');
       setRunOutput(data.sandbox?.last_run_output?.stdout || '');
       setError('');
     } catch (err) {
@@ -110,7 +110,9 @@ export function PaperDetailClient({ paperId }: PaperDetailClientProps) {
             {(detail.output?.math_explanations || []).map((item, index) => (
               <div key={index}>
                 <strong>{item.concept}</strong>
+                {item.formula ? <pre className="formula-block">{item.formula}</pre> : null}
                 <p className="muted">{item.explanation}</p>
+                {item.source_context ? <p className="muted">Recovered from: {item.source_context}</p> : null}
               </div>
             ))}
           </div>

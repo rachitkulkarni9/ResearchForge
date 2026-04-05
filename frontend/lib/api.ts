@@ -1,20 +1,8 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
 
-export function getToken() {
-  if (typeof window === 'undefined') return '';
-  return window.localStorage.getItem('paperlab_token') || '';
-}
-
-export function setToken(token: string) {
-  if (typeof window === 'undefined') return;
-  window.localStorage.setItem('paperlab_token', token);
-}
-
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const headers = new Headers(init?.headers || {});
-  const token = getToken();
-  if (token) headers.set('Authorization', `Bearer ${token}`);
-  if (!(init?.body instanceof FormData)) {
+  if (!(init?.body instanceof FormData) && !headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json');
   }
 
@@ -22,11 +10,23 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
     ...init,
     headers,
     cache: 'no-store',
+    credentials: 'include',
   });
 
   if (!response.ok) {
-    const text = await response.text();
-    throw new Error(text || `Request failed with ${response.status}`);
+    let message = `Request failed with ${response.status}`;
+    try {
+      const data = await response.json() as { detail?: string };
+      if (data.detail) {
+        message = data.detail;
+      }
+    } catch {
+      const text = await response.text();
+      if (text) {
+        message = text;
+      }
+    }
+    throw new Error(message);
   }
 
   return response.json() as Promise<T>;

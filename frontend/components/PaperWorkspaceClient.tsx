@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { apiFetch } from '@/lib/api';
 import type { PaperDetail, QAResponse } from '@/types/paper';
@@ -24,6 +24,120 @@ interface PaperWorkspaceClientProps {
   view: PaperView;
 }
 
+type AnswerBlock =
+  | { type: 'section'; title: string; body: string[] }
+  | { type: 'code'; title?: string; code: string };
+
+function parseAnswerBlocks(answer: string): AnswerBlock[] {
+  if (!answer.trim()) {
+    return [];
+  }
+
+  const lines = answer.split('\n');
+  const blocks: AnswerBlock[] = [];
+  let currentTitle = 'Answer';
+  let currentBody: string[] = [];
+  let inCodeBlock = false;
+  let codeLines: string[] = [];
+  let pendingCodeTitle = '';
+
+  const flushSection = () => {
+    const cleaned = currentBody.map((line) => line.trim()).filter(Boolean);
+    if (!cleaned.length) {
+      return;
+    }
+    blocks.push({ type: 'section', title: currentTitle, body: cleaned });
+    currentBody = [];
+  };
+
+  const flushCode = () => {
+    if (!codeLines.length) {
+      return;
+    }
+    blocks.push({ type: 'code', title: pendingCodeTitle || undefined, code: codeLines.join('\n').trimEnd() });
+    codeLines = [];
+    pendingCodeTitle = '';
+  };
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+
+    if (trimmed.startsWith('```')) {
+      if (inCodeBlock) {
+        flushCode();
+        inCodeBlock = false;
+      } else {
+        flushSection();
+        inCodeBlock = true;
+      }
+      continue;
+    }
+
+    if (inCodeBlock) {
+      codeLines.push(line);
+      continue;
+    }
+
+    if (trimmed.endsWith(':') && trimmed.length < 60) {
+      flushSection();
+      currentTitle = trimmed.slice(0, -1);
+      continue;
+    }
+
+    if (trimmed.toUpperCase() === trimmed && trimmed.length > 4 && trimmed.length < 50 && !trimmed.includes(' ')) {
+      flushSection();
+      currentTitle = trimmed.replace(/_/g, ' ');
+      continue;
+    }
+
+    if (/implementation|snippet|code/i.test(trimmed) && !trimmed.startsWith('-') && !trimmed.includes(':') && currentBody.length === 0) {
+      pendingCodeTitle = trimmed;
+      continue;
+    }
+
+    currentBody.push(line);
+  }
+
+  flushSection();
+  flushCode();
+
+  if (!blocks.length) {
+    return [{ type: 'section', title: 'Answer', body: answer.split('\n').map((line) => line.trim()).filter(Boolean) }];
+  }
+
+  return blocks;
+}
+
+function renderInlineFormatting(text: string) {
+  const segments = text.split(/(`[^`]+`)/g);
+  return segments.map((segment, index) => {
+    if (segment.startsWith('`') && segment.endsWith('`')) {
+      return <code key={index}>{segment.slice(1, -1)}</code>;
+    }
+    return segment;
+  });
+}
+
+function buildSandboxAssets(detail: PaperDetail) {
+  const implementationAssets = (detail.output?.implementation_steps || []).slice(0, 4).map((item, index) => ({
+    label: item.step || `Implementation ${index + 1}`,
+    detail: item.detail,
+    kind: 'step',
+  }));
+
+  const mathAssets = (detail.output?.math_explanations || []).slice(0, 4).map((item, index) => ({
+    label: item.concept || `Equation ${index + 1}`,
+    detail: item.formula || item.explanation,
+    kind: 'formula',
+  }));
+
+  return [
+    { label: 'main_model.py', detail: 'Current editable sandbox file', kind: 'file' },
+    ...implementationAssets,
+    ...mathAssets,
+  ].slice(0, 7);
+}
+
 export function PaperWorkspaceClient({ paperId, view }: PaperWorkspaceClientProps) {
   const [detail, setDetail] = useState<PaperDetail | null>(null);
   const [error, setError] = useState('');
@@ -35,13 +149,16 @@ export function PaperWorkspaceClient({ paperId, view }: PaperWorkspaceClientProp
   const [code, setCode] = useState('');
   const [runOutput, setRunOutput] = useState('');
   const [running, setRunning] = useState(false);
+  const [copyLabel, setCopyLabel] = useState('Copy code');
   const pathname = usePathname();
+  const sandboxEditorRef = useRef<HTMLTextAreaElement | null>(null);
+  const sandboxGutterRef = useRef<HTMLDivElement | null>(null);
 
   async function loadDetail() {
     try {
       const data = await apiFetch<PaperDetail>(`/paper/${paperId}`);
       setDetail(data);
-      setCode((current) => current || data.sandbox?.current_code || data.output?.starter_code || 'print("PaperLab")\n');
+      setCode((current) => current || data.sandbox?.current_code || data.output?.starter_code || 'print("ResearchForge")\n');
       setRunOutput(data.sandbox?.last_run_output?.stdout || '');
       setError('');
     } catch (err) {
@@ -119,6 +236,26 @@ export function PaperWorkspaceClient({ paperId, view }: PaperWorkspaceClientProp
     setRunOutput('');
   }
 
+  function syncSandboxScroll() {
+    if (!sandboxEditorRef.current || !sandboxGutterRef.current) {
+      return;
+    }
+    sandboxGutterRef.current.scrollTop = sandboxEditorRef.current.scrollTop;
+  }
+
+  async function copyCode() {
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopyLabel('Copied');
+      window.setTimeout(() => setCopyLabel('Copy code'), 1800);
+    } catch {
+      sandboxEditorRef.current?.focus();
+      sandboxEditorRef.current?.select();
+      setCopyLabel('Select all');
+      window.setTimeout(() => setCopyLabel('Copy code'), 1800);
+    }
+  }
+
   if (error) {
     return <div className="card"><p style={{ color: 'var(--error)' }}>{error}</p></div>;
   }
@@ -129,6 +266,10 @@ export function PaperWorkspaceClient({ paperId, view }: PaperWorkspaceClientProp
 
   const output = detail.output;
   const activeHref = pathname.split('/').pop() === paperId ? '' : pathname.split('/').pop();
+  const answerBlocks = qaResponse ? parseAnswerBlocks(qaResponse.answer) : [];
+  const sandboxAssets = buildSandboxAssets(detail);
+  const codeLines = code.split('\n');
+  const consoleLines = (runOutput || 'Run the sandbox to see stdout and stderr here.').split('\n');
 
   return (
     <div className="stack" style={{ marginTop: 24 }}>
@@ -229,7 +370,10 @@ export function PaperWorkspaceClient({ paperId, view }: PaperWorkspaceClientProp
           {(output?.math_explanations || []).length === 0 ? <p className="muted">No math explanations were extracted yet.</p> : null}
           {(output?.math_explanations || []).map((item, index) => (
             <div key={index} className="section-block stack" style={{ gap: 10 }}>
-              <strong>{item.concept}</strong>
+              <div className="button-row" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+                <strong>{item.concept}</strong>
+                {item.source_type ? <span className="badge">{item.source_type}</span> : null}
+              </div>
               {item.formula ? <pre className="formula-block">{item.formula}</pre> : null}
               {item.variable_notes?.length ? (
                 <div className="stack" style={{ gap: 8 }}>
@@ -239,6 +383,7 @@ export function PaperWorkspaceClient({ paperId, view }: PaperWorkspaceClientProp
               ) : null}
               <p className="muted">{item.explanation}</p>
               {item.importance ? <p><strong>Why it matters:</strong> {item.importance}</p> : null}
+              {item.source_context ? <p className="muted"><strong>Recovered from:</strong> {item.source_context}</p> : null}
             </div>
           ))}
         </div>
@@ -268,59 +413,159 @@ export function PaperWorkspaceClient({ paperId, view }: PaperWorkspaceClientProp
       ) : null}
 
       {view === 'sandbox' ? (
-        <div className="grid two">
-          <div className="card stack">
-            <h3>Editor</h3>
-            <textarea className="textarea code-editor" value={code} onChange={(e) => setCode(e.target.value)} />
+        <div className="card sandbox-shell">
+          <div className="sandbox-topbar">
+            <div>
+              <div className="eyebrow">Sandbox</div>
+              <h3>Research implementation workspace</h3>
+            </div>
             <div className="button-row">
               <button className="button" disabled={running} onClick={runCode} type="button">{running ? 'Running...' : 'Run code'}</button>
+              <button className="button ghost" onClick={() => void copyCode()} type="button">{copyLabel}</button>
               <button className="button secondary" onClick={resetCode} type="button">Reset</button>
             </div>
           </div>
-          <div className="card stack">
-            <h3>Output</h3>
-            <pre className="console">{runOutput || 'Run the sandbox to see stdout and stderr here.'}</pre>
+
+          <div className="sandbox-layout">
+            <aside className="sandbox-sidebar">
+              <div className="sandbox-sidebar-title">Extracted assets</div>
+              <div className="sandbox-asset-list">
+                {sandboxAssets.map((asset, index) => (
+                  <div key={`${asset.label}-${index}`} className="sandbox-asset-item">
+                    <div className="sandbox-asset-name">{asset.label}</div>
+                    <div className="sandbox-asset-detail">{asset.detail}</div>
+                  </div>
+                ))}
+              </div>
+            </aside>
+
+            <div className="sandbox-main">
+              <div className="sandbox-tabs">
+                <div className="sandbox-tab active">main_model.py</div>
+              </div>
+
+              <div className="sandbox-editor-shell">
+                <div className="sandbox-gutter" aria-hidden="true" ref={sandboxGutterRef}>
+                  <div className="sandbox-gutter-inner">
+                    {codeLines.map((_, index) => (
+                      <div key={index} className="sandbox-line-number">{index + 1}</div>
+                    ))}
+                  </div>
+                </div>
+                <textarea
+                  className="textarea code-editor sandbox-editor"
+                  ref={sandboxEditorRef}
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                  onScroll={syncSandboxScroll}
+                  spellCheck={false}
+                  wrap="off"
+                />
+              </div>
+
+              <div className="sandbox-console-card">
+                <div className="sandbox-console-header">
+                  <div className="sandbox-console-title">Console output</div>
+                  <span className={`sandbox-console-status ${runOutput ? 'ready' : 'idle'}`}>
+                    {runOutput ? 'ready' : 'idle'}
+                  </span>
+                </div>
+                <pre className="console sandbox-console-body">
+                  {consoleLines.map((line, index) => (
+                    <div key={index}>{line || ' '}</div>
+                  ))}
+                </pre>
+              </div>
+            </div>
           </div>
         </div>
       ) : null}
 
       {view === 'qa' ? (
-        <div className="card stack">
-          <h3>Ask the tutor</h3>
-          <textarea className="textarea" value={question} onChange={(e) => setQuestion(e.target.value)} placeholder="What evidence supports the architecture choice, and what limitations are stated?" />
-          <div className="button-row">
-            <button className="button" disabled={!question || asking} onClick={askQuestion} type="button">{asking ? 'Thinking...' : 'Ask question'}</button>
-          </div>
-          {qaResponse ? (
-            <div className="stack">
-              <div className="grid two">
-                <div className="card stack">
-                  <div className="eyebrow">Status</div>
-                  <strong>{qaResponse.status}</strong>
-                </div>
-                <div className="card stack">
-                  <div className="eyebrow">Question type</div>
-                  <strong>{qaResponse.question_type}</strong>
-                </div>
-              </div>
-              <div className="card stack">
-                <div className="eyebrow">Answer</div>
-                <p>{qaResponse.answer}</p>
-                <p className="muted">Confidence: {(qaResponse.confidence * 100).toFixed(0)}%</p>
-              </div>
-              <div className="card stack">
-                <div className="eyebrow">Evidence</div>
-                {qaResponse.evidence.map((item, index) => (
-                  <div key={index} className="section-block stack" style={{ gap: 8 }}>
-                    <strong>{item.source}</strong>
-                    <pre className="console" style={{ background: '#2b241e' }}>{item.passage}</pre>
-                  </div>
-                ))}
+        <div className="card qa-shell">
+          <div className="qa-thread">
+            <div className="qa-row qa-row-assistant">
+              <div className="qa-avatar" aria-hidden="true">✦</div>
+              <div className="qa-bubble qa-bubble-assistant">
+                <p>
+                  I&apos;ve finished indexing the uploaded paper <strong>{detail.paper.title}</strong>. I&apos;m ready to explain the
+                  architecture, walk through the math, and turn the formulas into implementation guidance.
+                </p>
               </div>
             </div>
-          ) : (
-            <pre className="console">Ask a question about architecture, limitations, evaluation, future work, or failure cases.</pre>
-          )}
+
+            {question ? (
+              <div className="qa-row qa-row-user">
+                <div className="qa-bubble qa-bubble-user">
+                  <p>{question}</p>
+                </div>
+              </div>
+            ) : null}
+
+            {qaResponse ? (
+              <div className="qa-row qa-row-assistant">
+                <div className="qa-avatar" aria-hidden="true">✦</div>
+                <div className="qa-bubble qa-bubble-assistant qa-answer-stack">
+                  <div className="qa-meta">
+                    <span className="badge">{qaResponse.status}</span>
+                    <span className="badge">{qaResponse.question_type}</span>
+                    <span className="badge">{(qaResponse.confidence * 100).toFixed(0)}% confidence</span>
+                  </div>
+
+                  {answerBlocks.map((block, index) => (
+                    block.type === 'section' ? (
+                      <div key={index} className="qa-panel">
+                        <div className="qa-panel-title">{block.title}</div>
+                        <div className="qa-panel-body">
+                          {block.body.map((line, lineIndex) => (
+                            line.startsWith('-') ? (
+                              <div key={lineIndex} className="qa-bullet">{renderInlineFormatting(line.replace(/^-+\s*/, ''))}</div>
+                            ) : (
+                              <p key={lineIndex}>{renderInlineFormatting(line)}</p>
+                            )
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <div key={index} className="qa-code-card">
+                        {block.title ? <div className="qa-code-title">{block.title}</div> : null}
+                        <pre className="console qa-code-block">{block.code}</pre>
+                      </div>
+                    )
+                  ))}
+
+                  {qaResponse.evidence.length ? (
+                    <div className="qa-evidence-strip">
+                      {qaResponse.evidence.slice(0, 3).map((item, index) => (
+                        <div key={index} className="qa-evidence-chip" title={item.passage}>
+                          {item.source}
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+            ) : (
+              <div className="qa-row qa-row-assistant">
+                <div className="qa-avatar" aria-hidden="true">✦</div>
+                <div className="qa-bubble qa-bubble-assistant">
+                  <p>Ask about formulas, derivations, implementation choices, limitations, or how to turn the paper into code.</p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="qa-composer">
+            <textarea
+              className="textarea qa-input"
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+              placeholder="Ask anything about the research paper..."
+            />
+            <button className="button qa-send" disabled={!question || asking} onClick={askQuestion} type="button">
+              {asking ? 'Thinking...' : 'Send'}
+            </button>
+          </div>
         </div>
       ) : null}
     </div>
