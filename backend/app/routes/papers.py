@@ -2,7 +2,7 @@
 from datetime import datetime, timezone
 from pathlib import Path
 
-from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 
 from app.core.config import Settings, get_settings
 from app.core.security import get_current_user
@@ -10,9 +10,10 @@ from app.models.domain import JobRecord, PaperRecord
 from app.schemas.paper import JobStatusResponse, PaperDetailResponse, PaperSummary, ReprocessPaperResponse, UploadPaperResponse
 from app.services.blob_store import BlobStore
 from app.services.document_store import DocumentStore
+from app.services.job_runner import JobRunner
 from app.services.usage_service import UsageService
 from app.services.workspace_service import WorkspaceService
-from app.utils.dependencies import get_blob_store, get_document_store, get_orchestrator, get_usage_service, get_workspace_service
+from app.utils.dependencies import get_blob_store, get_document_store, get_job_runner, get_orchestrator, get_usage_service, get_workspace_service
 
 router = APIRouter(tags=["papers"])
 
@@ -25,7 +26,6 @@ def ensure_workspace_access(workspace_service: WorkspaceService, workspace_id: s
 
 @router.post("/upload-paper", response_model=UploadPaperResponse)
 async def upload_paper(
-    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     current_user: dict = Depends(get_current_user),
     settings: Settings = Depends(get_settings),
@@ -33,6 +33,7 @@ async def upload_paper(
     blob_store: BlobStore = Depends(get_blob_store),
     workspace_service: WorkspaceService = Depends(get_workspace_service),
     usage_service: UsageService = Depends(get_usage_service),
+    job_runner: JobRunner = Depends(get_job_runner),
 ) -> UploadPaperResponse:
     workspace_id = current_user["workspace_id"]
     ensure_workspace_access(workspace_service, workspace_id, current_user["sub"])
@@ -81,7 +82,7 @@ async def upload_paper(
     document_store.upsert("jobs", job.id, job.model_dump(mode="json"))
     usage_service.track(workspace_id, current_user["sub"], "paper.uploaded", {"paper_id": paper.id})
 
-    background_tasks.add_task(get_orchestrator().process_job, job.id)
+    job_runner.submit(get_orchestrator().process_job, job.id)
 
     return UploadPaperResponse(
         paper=PaperSummary(**paper.model_dump()),
@@ -94,11 +95,11 @@ async def upload_paper(
 @router.post("/paper/{paper_id}/reprocess", response_model=ReprocessPaperResponse)
 def reprocess_paper(
     paper_id: str,
-    background_tasks: BackgroundTasks,
     current_user: dict = Depends(get_current_user),
     document_store: DocumentStore = Depends(get_document_store),
     workspace_service: WorkspaceService = Depends(get_workspace_service),
     usage_service: UsageService = Depends(get_usage_service),
+    job_runner: JobRunner = Depends(get_job_runner),
 ) -> ReprocessPaperResponse:
     workspace_id = current_user["workspace_id"]
     ensure_workspace_access(workspace_service, workspace_id, current_user["sub"])
@@ -114,7 +115,7 @@ def reprocess_paper(
     job = JobRecord(workspace_id=workspace_id, paper_id=paper_id)
     document_store.upsert("jobs", job.id, job.model_dump(mode="json"))
     usage_service.track(workspace_id, current_user["sub"], "paper.reprocessed", {"paper_id": paper_id, "job_id": job.id})
-    background_tasks.add_task(get_orchestrator().process_job, job.id)
+    job_runner.submit(get_orchestrator().process_job, job.id)
 
     return ReprocessPaperResponse(
         paper=PaperSummary(**paper),

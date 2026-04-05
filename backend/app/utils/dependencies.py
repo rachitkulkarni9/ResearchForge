@@ -8,6 +8,7 @@ from app.services.blob_store import BlobStore
 from app.services.document_store import DocumentStore
 from app.services.firebase_auth_service import FirebaseAuthService
 from app.services.gemini_service import GeminiService
+from app.services.job_runner import JobRunner
 from app.services.pdf_service import PdfExtractionService
 from app.services.usage_service import UsageService
 from app.services.workspace_service import WorkspaceService
@@ -51,6 +52,11 @@ def get_usage_service() -> UsageService:
 @lru_cache
 def get_sandbox_executor() -> SandboxExecutor:
     return SandboxExecutor(get_settings())
+
+
+@lru_cache
+def get_job_runner() -> JobRunner:
+    return JobRunner()
 
 
 @lru_cache
